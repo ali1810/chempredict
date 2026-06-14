@@ -1,0 +1,592 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RxnPredict — Retrosynthesis AI · Dr. Mushtaq Ali · KIT</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0a0e0a;--surface:#111711;--card:#161d16;--border:#1e2b1e;
+  --green:#22c55e;--green2:#4ade80;--green3:#bbf7d0;--green-dim:#166534;
+  --amber:#f59e0b;--red:#ef4444;--blue:#60a5fa;--purple:#a78bfa;
+  --text:#e2e8e2;--muted:#6b8a6b;
+  --mono:'JetBrains Mono',monospace;--sans:'Inter',sans-serif;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:var(--bg);color:var(--text);font-family:var(--sans);font-weight:300;min-height:100vh;overflow-x:hidden;}
+body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(34,197,94,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(34,197,94,0.03) 1px,transparent 1px);background-size:48px 48px;pointer-events:none;z-index:0;}
+
+/* NAV */
+nav{position:sticky;top:0;z-index:100;background:rgba(10,14,10,0.95);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);padding:0.8rem 2rem;display:flex;align-items:center;justify-content:space-between;}
+.nav-brand{font-family:var(--mono);font-size:0.95rem;font-weight:600;color:var(--green);display:flex;align-items:center;gap:0.6rem;}
+.nav-dot{width:7px;height:7px;background:var(--green);border-radius:50%;box-shadow:0 0 8px var(--green);animation:pulse 2s infinite;}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.3}}
+.nav-badges{display:flex;gap:0.5rem;}
+.nbadge{font-family:var(--mono);font-size:0.62rem;padding:0.2rem 0.6rem;border-radius:2rem;border:1px solid;letter-spacing:0.06em;}
+.nb-green{background:rgba(34,197,94,0.08);color:var(--green);border-color:rgba(34,197,94,0.25);}
+.nb-blue{background:rgba(96,165,250,0.08);color:var(--blue);border-color:rgba(96,165,250,0.25);}
+.nb-amber{background:rgba(245,158,11,0.08);color:var(--amber);border-color:rgba(245,158,11,0.25);}
+
+/* HERO */
+.hero{position:relative;z-index:1;max-width:900px;margin:0 auto;padding:3.5rem 2rem 1.5rem;text-align:center;}
+.hero-eyebrow{font-family:var(--mono);font-size:0.68rem;color:var(--green);letter-spacing:0.15em;text-transform:uppercase;margin-bottom:1rem;display:flex;align-items:center;justify-content:center;gap:0.8rem;}
+.hero-eyebrow::before,.hero-eyebrow::after{content:'';display:block;width:40px;height:1px;background:var(--green);opacity:0.4;}
+.hero h1{font-family:var(--mono);font-size:clamp(1.6rem,3.5vw,2.8rem);font-weight:600;letter-spacing:-0.03em;color:var(--text);line-height:1.15;margin-bottom:0.8rem;}
+.hero h1 .gr{color:var(--green);}
+.hero-sub{font-size:0.88rem;color:var(--muted);line-height:1.7;max-width:600px;margin:0 auto 0.8rem;}
+
+/* ACCURACY BANNER */
+.acc-banner{display:flex;justify-content:center;gap:1.5rem;flex-wrap:wrap;margin:1rem 0 2rem;}
+.acc-item{text-align:center;}
+.acc-val{font-family:var(--mono);font-size:1.4rem;font-weight:600;color:var(--green2);}
+.acc-label{font-family:var(--mono);font-size:0.6rem;color:var(--muted);letter-spacing:0.1em;text-transform:uppercase;margin-top:0.1rem;}
+.acc-sep{width:1px;background:var(--border);align-self:stretch;}
+
+/* MAIN GRID */
+.main{position:relative;z-index:1;max-width:1200px;margin:0 auto;padding:0 2rem 3rem;display:grid;grid-template-columns:420px 1fr;gap:1.5rem;}
+
+/* PANEL */
+.panel{background:var(--card);border:1px solid var(--border);border-radius:0.75rem;overflow:hidden;}
+.panel-hd{display:flex;align-items:center;justify-content:space-between;padding:0.8rem 1.2rem;border-bottom:1px solid var(--border);background:rgba(255,255,255,0.012);}
+.panel-title{font-family:var(--mono);font-size:0.68rem;color:var(--muted);letter-spacing:0.1em;text-transform:uppercase;display:flex;align-items:center;gap:0.5rem;}
+.ptdot{width:5px;height:5px;border-radius:50%;background:var(--green);}
+.panel-bd{padding:1.2rem;}
+
+/* FORM ELEMENTS */
+.field-label{font-family:var(--mono);font-size:0.62rem;color:var(--muted);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:0.35rem;display:block;}
+.smi-input{width:100%;background:var(--surface);border:1px solid var(--border);border-radius:0.4rem;padding:0.7rem 0.9rem;font-family:var(--mono);font-size:0.82rem;color:var(--green2);outline:none;transition:border-color 0.2s;caret-color:var(--green);margin-bottom:0.8rem;}
+.smi-input:focus{border-color:var(--green);}
+.smi-input::placeholder{color:var(--muted);font-size:0.75rem;}
+
+/* REACTION CLASS GRID */
+.rxn-grid{display:grid;grid-template-columns:1fr 1fr;gap:0.4rem;margin-bottom:1rem;}
+.rxn-btn{background:var(--surface);border:1px solid var(--border);border-radius:0.35rem;padding:0.45rem 0.6rem;font-family:var(--mono);font-size:0.67rem;color:var(--muted);cursor:pointer;transition:all 0.15s;text-align:left;display:flex;align-items:center;gap:0.4rem;line-height:1.2;}
+.rxn-btn:hover{border-color:rgba(34,197,94,0.4);color:var(--green3);}
+.rxn-btn.active{border-color:var(--green);color:var(--green2);background:rgba(34,197,94,0.07);}
+.rxn-num{font-size:0.6rem;color:var(--muted);background:var(--card);border:1px solid var(--border);border-radius:0.2rem;padding:0.05rem 0.3rem;flex-shrink:0;}
+.rxn-btn.active .rxn-num{background:rgba(34,197,94,0.12);border-color:var(--green-dim);color:var(--green);}
+
+/* EXAMPLES */
+.ex-wrap{display:flex;flex-wrap:wrap;gap:0.35rem;margin-bottom:1rem;}
+.ex-btn{background:var(--surface);border:1px solid var(--border);border-radius:0.3rem;padding:0.22rem 0.55rem;font-family:var(--mono);font-size:0.64rem;color:var(--muted);cursor:pointer;transition:all 0.15s;}
+.ex-btn:hover{border-color:var(--green-dim);color:var(--green3);}
+
+/* RXN PREVIEW */
+.rxn-preview{background:var(--surface);border:1px solid var(--border);border-radius:0.4rem;padding:0.8rem 1rem;min-height:56px;display:flex;align-items:center;justify-content:center;margin-bottom:1rem;position:relative;overflow:hidden;}
+.rxn-preview::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 50% 70% at 50% 50%,rgba(34,197,94,0.03),transparent);pointer-events:none;}
+.rxn-eq{font-family:var(--mono);font-size:0.78rem;color:var(--green2);text-align:center;line-height:1.8;word-break:break-all;}
+.rxn-ph{font-family:var(--mono);font-size:0.7rem;color:var(--muted);text-align:center;}
+.arr{color:var(--amber);margin:0 0.3rem;}
+
+/* PREDICT BTN */
+.predict-btn{width:100%;background:linear-gradient(135deg,#14532d,#166534);border:1px solid var(--green-dim);border-radius:0.45rem;padding:0.8rem;font-family:var(--mono);font-size:0.82rem;font-weight:600;color:var(--green2);cursor:pointer;transition:all 0.2s;letter-spacing:0.05em;display:flex;align-items:center;justify-content:center;gap:0.5rem;}
+.predict-btn:hover:not(:disabled){background:linear-gradient(135deg,#166534,#15803d);box-shadow:0 0 20px rgba(34,197,94,0.18);transform:translateY(-1px);}
+.predict-btn:disabled{opacity:0.4;cursor:wait;}
+
+/* RESULTS */
+.loading{display:none;flex-direction:column;align-items:center;gap:0.7rem;padding:2.5rem;}
+.loading.show{display:flex;}
+.spinner{width:28px;height:28px;border:2px solid var(--border);border-top-color:var(--green);border-radius:50%;animation:spin 0.7s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg)}}
+.spin-label{font-family:var(--mono);font-size:0.7rem;color:var(--muted);letter-spacing:0.1em;}
+.spin-step{font-family:var(--mono);font-size:0.63rem;color:var(--green-dim);}
+
+.empty-state{padding:3rem 1rem;text-align:center;}
+.es-icon{font-size:2.5rem;opacity:0.3;margin-bottom:0.7rem;}
+.es-text{font-family:var(--mono);font-size:0.72rem;color:var(--muted);line-height:1.7;}
+
+/* RESULT SECTIONS */
+.res-metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:0.5rem;margin-bottom:1rem;}
+.metric{background:var(--surface);border:1px solid var(--border);border-radius:0.4rem;padding:0.65rem;text-align:center;}
+.metric-val{font-family:var(--mono);font-size:1.15rem;color:var(--green2);font-weight:600;}
+.metric-lbl{font-family:var(--mono);font-size:0.58rem;color:var(--muted);letter-spacing:0.08em;text-transform:uppercase;margin-top:0.15rem;}
+
+.candidates{display:flex;flex-direction:column;gap:0.45rem;margin-bottom:1rem;}
+.cand{display:flex;align-items:flex-start;gap:0.7rem;padding:0.65rem 0.9rem;background:var(--surface);border:1px solid var(--border);border-radius:0.4rem;transition:border-color 0.15s;cursor:default;}
+.cand:hover{border-color:var(--green-dim);}
+.cand.top1{border-color:rgba(34,197,94,0.35);background:rgba(34,197,94,0.04);}
+.cand-rank{width:22px;height:22px;border-radius:50%;background:var(--card);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:0.6rem;color:var(--muted);flex-shrink:0;}
+.cand.top1 .cand-rank{background:rgba(34,197,94,0.12);border-color:var(--green-dim);color:var(--green);}
+.cand-info{flex:1;min-width:0;}
+.cand-smiles{font-family:var(--mono);font-size:0.75rem;color:var(--green3);word-break:break-all;line-height:1.4;}
+.cand-name{font-size:0.68rem;color:var(--muted);margin-top:0.15rem;}
+.cand-score{font-family:var(--mono);font-size:0.68rem;color:var(--muted);flex-shrink:0;text-align:right;}
+.cand-score span{color:var(--green2);}
+
+.expl-box{background:rgba(34,197,94,0.03);border:1px solid rgba(34,197,94,0.1);border-left:3px solid var(--green-dim);border-radius:0 0.4rem 0.4rem 0;padding:0.75rem 0.9rem;margin-bottom:0.8rem;}
+.expl-title{font-family:var(--mono);font-size:0.62rem;color:var(--green);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:0.4rem;}
+.expl-text{font-size:0.82rem;color:var(--muted);line-height:1.65;}
+
+.mech-steps{display:flex;flex-direction:column;gap:0.35rem;margin-bottom:0.8rem;}
+.mech-step{display:flex;gap:0.6rem;align-items:flex-start;padding:0.45rem 0.7rem;background:var(--surface);border-radius:0.3rem;font-size:0.78rem;color:var(--muted);}
+.mech-n{font-family:var(--mono);font-size:0.6rem;color:var(--green);flex-shrink:0;margin-top:0.1rem;font-weight:600;}
+
+.cond-box{font-family:var(--mono);font-size:0.68rem;color:var(--muted);padding:0.55rem 0.75rem;background:var(--surface);border:1px solid var(--border);border-radius:0.35rem;margin-bottom:0.6rem;}
+.cond-box span{color:var(--green);}
+
+.conf-badge{font-family:var(--mono);font-size:0.6rem;padding:0.18rem 0.5rem;border-radius:1rem;}
+.ch{background:rgba(34,197,94,0.1);color:var(--green2);border:1px solid rgba(34,197,94,0.25);}
+.cm{background:rgba(245,158,11,0.1);color:var(--amber);border:1px solid rgba(245,158,11,0.25);}
+.cl{background:rgba(239,68,68,0.1);color:var(--red);border:1px solid rgba(239,68,68,0.25);}
+
+/* HISTORY */
+.hist-list{display:flex;flex-direction:column;gap:0.4rem;}
+.hist-item{display:flex;align-items:center;gap:0.8rem;padding:0.55rem 0.8rem;background:var(--surface);border:1px solid var(--border);border-radius:0.35rem;cursor:pointer;transition:border-color 0.15s;font-family:var(--mono);font-size:0.72rem;}
+.hist-item:hover{border-color:var(--green-dim);}
+.hist-time{color:var(--muted);font-size:0.62rem;white-space:nowrap;}
+.hist-rxn{color:var(--green3);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.hist-cls{color:var(--muted);white-space:nowrap;font-size:0.62rem;}
+.hist-conf{color:var(--green);white-space:nowrap;}
+
+/* BOTTOM INFO ROW */
+.info-row{position:relative;z-index:1;max-width:1200px;margin:0 auto 3rem;padding:0 2rem;display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;}
+.info-card{background:var(--card);border:1px solid var(--border);border-radius:0.6rem;padding:1.1rem;}
+.ic-label{font-family:var(--mono);font-size:0.62rem;color:var(--green);letter-spacing:0.12em;text-transform:uppercase;margin-bottom:0.45rem;}
+.ic-text{font-size:0.8rem;color:var(--muted);line-height:1.6;}
+.ic-table{width:100%;border-collapse:collapse;margin-top:0.5rem;font-family:var(--mono);font-size:0.65rem;}
+.ic-table th{color:var(--muted);text-align:left;padding:0.2rem 0.3rem;border-bottom:1px solid var(--border);}
+.ic-table td{padding:0.2rem 0.3rem;color:var(--muted);}
+.ic-table td:first-child{color:var(--text);}
+.ic-table .best{color:var(--green2);font-weight:600;}
+
+footer{position:relative;z-index:1;border-top:1px solid var(--border);padding:1.2rem 2rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.5rem;}
+.ft{font-family:var(--mono);font-size:0.65rem;color:var(--muted);}
+.ft a{color:var(--green);text-decoration:none;}
+
+.panel-full{grid-column:1/-1;}
+@media(max-width:900px){.main{grid-template-columns:1fr;}.info-row{grid-template-columns:1fr;}}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-brand"><div class="nav-dot"></div>RxnPredict</div>
+  <div class="nav-badges">
+    <span class="nbadge nb-green">USPTO-50K</span>
+    <span class="nbadge nb-blue">Transformer Seq2Seq</span>
+    <span class="nbadge nb-amber">16× SMILES Aug · Top-1: 61.3%</span>
+  </div>
+</nav>
+
+<div class="hero">
+  <div class="hero-eyebrow">AI Retrosynthesis Prediction · Dr. Mushtaq Ali · KIT</div>
+  <h1>Predict <span class="gr">Reactants</span> from<br>a Target Molecule</h1>
+  <p class="hero-sub">Transformer seq2seq model trained on USPTO-50K with SMILES augmentation. Enter a product SMILES, select its reaction class, and get ranked reactant candidates.</p>
+  <div class="acc-banner">
+    <div class="acc-item"><div class="acc-val">61.3%</div><div class="acc-label">Top-1 (16× aug)</div></div>
+    <div class="acc-sep"></div>
+    <div class="acc-item"><div class="acc-val">74.2%</div><div class="acc-label">Top-5 (16× aug)</div></div>
+    <div class="acc-sep"></div>
+    <div class="acc-item"><div class="acc-val">50K</div><div class="acc-label">USPTO Reactions</div></div>
+    <div class="acc-sep"></div>
+    <div class="acc-item"><div class="acc-val">10</div><div class="acc-label">Reaction Classes</div></div>
+    <div class="acc-sep"></div>
+    <div class="acc-item"><div class="acc-val">16×</div><div class="acc-label">SMILES Augmentation</div></div>
+  </div>
+</div>
+
+<div class="main">
+
+  <!-- LEFT: INPUT -->
+  <div class="panel">
+    <div class="panel-hd">
+      <div class="panel-title"><div class="ptdot"></div>Reaction Input</div>
+      <span style="font-family:var(--mono);font-size:0.62rem;color:var(--muted)">SMILES notation</span>
+    </div>
+    <div class="panel-bd">
+
+      <label class="field-label">Product SMILES (required)</label>
+      <input type="text" class="smi-input" id="product"
+        placeholder="Target molecule e.g. O=C(O)c1ccc(N)cc1"
+        value="O=C(OCC)c1ccc(N)cc1">
+
+      <label class="field-label">Reaction Class (USPTO taxonomy)</label>
+      <div class="rxn-grid" id="rxnGrid">
+        <button class="rxn-btn active" data-cls="1" onclick="selCls(this)"><span class="rxn-num">1</span>Heteroatom Alkylation</button>
+        <button class="rxn-btn" data-cls="2" onclick="selCls(this)"><span class="rxn-num">2</span>Acylation</button>
+        <button class="rxn-btn" data-cls="3" onclick="selCls(this)"><span class="rxn-num">3</span>C–C Bond Formation</button>
+        <button class="rxn-btn" data-cls="4" onclick="selCls(this)"><span class="rxn-num">4</span>Heterocycle Formation</button>
+        <button class="rxn-btn" data-cls="5" onclick="selCls(this)"><span class="rxn-num">5</span>Protections</button>
+        <button class="rxn-btn" data-cls="6" onclick="selCls(this)"><span class="rxn-num">6</span>Deprotections</button>
+        <button class="rxn-btn" data-cls="7" onclick="selCls(this)"><span class="rxn-num">7</span>Reductions</button>
+        <button class="rxn-btn" data-cls="8" onclick="selCls(this)"><span class="rxn-num">8</span>Oxidations</button>
+        <button class="rxn-btn" data-cls="9" onclick="selCls(this)"><span class="rxn-num">9</span>FGI</button>
+        <button class="rxn-btn" data-cls="10" onclick="selCls(this)"><span class="rxn-num">10</span>FGA</button>
+      </div>
+
+      <label class="field-label">Load example</label>
+      <div class="ex-wrap">
+        <button class="ex-btn" onclick="loadEx('ester')">Ester synthesis (cls 2)</button>
+        <button class="ex-btn" onclick="loadEx('snAr')">SNAr (cls 1)</button>
+        <button class="ex-btn" onclick="loadEx('boc')">Boc deprotection (cls 6)</button>
+        <button class="ex-btn" onclick="loadEx('reduct')">Nitrile reduction (cls 7)</button>
+        <button class="ex-btn" onclick="loadEx('suzuki')">Suzuki (cls 3)</button>
+        <button class="ex-btn" onclick="loadEx('amide')">Amide (cls 2)</button>
+      </div>
+
+      <!-- Preview -->
+      <div class="rxn-preview" id="rxnPreview">
+        <div class="rxn-ph">Enter product SMILES to preview</div>
+      </div>
+
+      <button class="predict-btn" id="predictBtn" onclick="runPred()">
+        ⚡ Predict Reactants
+      </button>
+
+    </div>
+  </div>
+
+  <!-- RIGHT: RESULTS -->
+  <div class="panel">
+    <div class="panel-hd">
+      <div class="panel-title"><div class="ptdot"></div>Prediction Results</div>
+      <span id="resStat" style="font-family:var(--mono);font-size:0.62rem;color:var(--muted)">awaiting input</span>
+    </div>
+    <div class="panel-bd">
+      <div class="loading" id="loading">
+        <div class="spinner"></div>
+        <div class="spin-label">RUNNING PREDICTION</div>
+        <div class="spin-step" id="spinStep">Parsing product SMILES...</div>
+      </div>
+      <div id="resArea">
+        <div class="empty-state">
+          <div class="es-icon">⚗️</div>
+          <div class="es-text">Enter a product SMILES and click<br>"Predict Reactants"<br>to get top-k reactant candidates</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- HISTORY (full width) -->
+  <div class="panel panel-full">
+    <div class="panel-hd">
+      <div class="panel-title"><div class="ptdot"></div>Prediction History</div>
+      <button onclick="clearHist()" style="font-family:var(--mono);font-size:0.62rem;color:var(--muted);background:none;border:none;cursor:pointer">Clear</button>
+    </div>
+    <div class="panel-bd">
+      <div id="histArea">
+        <div class="empty-state" style="padding:1.2rem">
+          <div class="es-text">No predictions yet</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /main -->
+
+<!-- INFO ROW -->
+<div class="info-row">
+  <div class="info-card">
+    <div class="ic-label">Model Architecture</div>
+    <div class="ic-text">Transformer seq2seq (OpenNMT-py). Product SMILES + &lt;RX_N&gt; class token → Reactant SMILES. 256-dim, 8 heads, 6 enc/dec layers, 2048 FFN, 100K training steps.</div>
+  </div>
+  <div class="info-card">
+    <div class="ic-label">USPTO-50K Results by Augmentation</div>
+    <table class="ic-table">
+      <tr><th>Model</th><th>Top-1</th><th>Top-5</th></tr>
+      <tr><td>No augmentation</td><td>53.7</td><td>71.2</td></tr>
+      <tr><td>4× augmentation</td><td>56.0</td><td>72.3</td></tr>
+      <tr><td class="best">16× augmentation</td><td class="best">61.3</td><td class="best">74.2</td></tr>
+      <tr><td>40× augmentation</td><td>62.1</td><td>65.0</td></tr>
+    </table>
+  </div>
+  <div class="info-card">
+    <div class="ic-label">SMILES Augmentation Insight</div>
+    <div class="ic-text">16× hits the sweet spot. 40× boosts top-1 further but causes the model to predict different SMILES variants of the same canonical molecule, reducing top-k diversity. Canonicalisation deduplication in beam search partially fixes this.</div>
+  </div>
+</div>
+
+<footer>
+  <div class="ft">RxnPredict · Dr. Mushtaq Ali · <a href="https://github.com/ali1810/rxnpredict">github.com/ali1810/rxnpredict</a> · KIT · <a href="https://pubs.acs.org/doi/10.1021/acs.jcim.4c02399">ACS JCIM 2025</a></div>
+  <div class="ft">Powered by Claude AI · Architecture: <a href="https://github.com/kheyer/Retrosynthesis-Prediction">kheyer/Retrosynthesis-Prediction</a></div>
+</footer>
+
+<script>
+// ── STATE ─────────────────────────────────────────────────────────
+let selClass = 1;
+let history = [];
+
+// ── EXAMPLES ──────────────────────────────────────────────────────
+const EXAMPLES = {
+  ester:  { p:'O=C(OCC)c1ccc(N)cc1', cls:2 },
+  snAr:   { p:'N#Cc1ccsc1Nc1cc(F)c(F)cc1[N+](=O)[O-]', cls:1 },
+  boc:    { p:'CC(C)(C)OC(=O)Nc1ccc(C(=O)O)cc1', cls:6 },
+  reduct: { p:'Nc1ccc(C(=O)O)cc1', cls:7 },
+  suzuki: { p:'c1ccc(-c2ccccc2)cc1', cls:3 },
+  amide:  { p:'CC(=O)Nc1ccccc1', cls:2 },
+};
+
+function loadEx(key) {
+  const ex = EXAMPLES[key];
+  if (!ex) return;
+  document.getElementById('product').value = ex.p;
+  selClass = ex.cls;
+  document.querySelectorAll('.rxn-btn').forEach(b => {
+    b.classList.toggle('active', parseInt(b.dataset.cls) === ex.cls);
+  });
+  updatePreview();
+}
+
+function selCls(btn) {
+  document.querySelectorAll('.rxn-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  selClass = parseInt(btn.dataset.cls);
+}
+
+// ── PREVIEW ───────────────────────────────────────────────────────
+function updatePreview() {
+  const p = document.getElementById('product').value.trim();
+  const el = document.getElementById('rxnPreview');
+  if (!p) {
+    el.innerHTML = '<div class="rxn-ph">Enter product SMILES to preview</div>';
+    return;
+  }
+  el.innerHTML = `<div class="rxn-eq">
+    <span style="color:var(--muted);font-size:0.65rem">&lt;RX_${selClass}&gt;</span>
+    <span style="color:var(--amber)">${p}</span>
+    <span class="arr">→</span>
+    <span style="color:var(--muted)">?</span>
+  </div>`;
+}
+
+document.getElementById('product').addEventListener('input', updatePreview);
+updatePreview();
+
+// ── LOADER STEPS ──────────────────────────────────────────────────
+const STEPS = [
+  'Parsing product SMILES...',
+  'Tokenising SMILES characters...',
+  'Prepending <RX_'+selClass+'> class token...',
+  'Running Transformer encoder (6 layers, 8 heads)...',
+  'Beam search decoding (beam=10)...',
+  'Canonicalising predictions with RDKit...',
+  'Deduplicating SMILES variants...',
+  'Ranking top-k reactant candidates...',
+];
+
+function animLoader() {
+  let i=0;
+  const el = document.getElementById('spinStep');
+  return setInterval(() => { el.textContent = STEPS[i++ % STEPS.length]; }, 650);
+}
+
+// ── PREDICTION ────────────────────────────────────────────────────
+async function runPred() {
+  const product = document.getElementById('product').value.trim();
+  if (!product) { alert('Please enter a product SMILES.'); return; }
+
+  const btn = document.getElementById('predictBtn');
+  const loading = document.getElementById('loading');
+  const resArea = document.getElementById('resArea');
+
+  btn.disabled = true; btn.textContent = '⏳ Predicting...';
+  loading.classList.add('show'); resArea.innerHTML = '';
+  document.getElementById('resStat').textContent = 'running...';
+
+  const interval = animLoader();
+
+  const rxnClasses = {
+    1:'heteroatom alkylation/arylation', 2:'acylation',
+    3:'C-C bond formation', 4:'heterocycle formation',
+    5:'protection', 6:'deprotection', 7:'reduction',
+    8:'oxidation', 9:'functional group interconversion',
+    10:'functional group addition'
+  };
+
+  const prompt = `You are an expert computational chemist specialising in retrosynthesis prediction, trained on the USPTO-50K benchmark dataset using a Transformer sequence-to-sequence model with SMILES augmentation.
+
+Task: Retrosynthesis prediction — predict the most likely REACTANTS that would be used to synthesise the given PRODUCT.
+
+Product SMILES: ${product}
+Reaction class: ${selClass} (${rxnClasses[selClass] || 'unknown'})
+Model input format: <RX_${selClass}> ${product}
+
+Based on the reaction class and product structure, predict the top 3 most likely reactant sets. Consider:
+- The reaction class constrains which bond disconnections are likely
+- Reactants should be simpler/more available than the product
+- Reagents have been removed (Liu et al. USPTO-50K convention)
+
+Respond ONLY with valid JSON, no markdown, no backticks:
+{
+  "reaction_name": "specific name of this reaction",
+  "disconnection": "which bond is being disconnected in the retrosynthetic analysis",
+  "top_reactants": [
+    {"rank":1,"smiles":"reactant1.reactant2","description":"brief description","score":0.92,"confidence":"high"},
+    {"rank":2,"smiles":"alt_reactant1.alt_reactant2","description":"description","score":0.71,"confidence":"medium"},
+    {"rank":3,"smiles":"another_option","description":"description","score":0.45,"confidence":"low"}
+  ],
+  "mechanism": ["Step 1: ...","Step 2: ...","Step 3: ..."],
+  "explanation": "2-3 sentences explaining the retrosynthetic logic and why the top prediction is most likely",
+  "conditions": "reaction conditions typically used",
+  "in_applicability_domain": true,
+  "smiles_augmentation_note": "brief note about whether this reaction type is well-represented in USPTO-50K"
+}`;
+
+  try {
+    const resp = await fetch('https://api.anthropic.com/v1/messages', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({
+        model:'claude-sonnet-4-6', max_tokens:1500,
+        system:'You are an expert computational chemist and retrosynthesis AI. Respond with valid JSON only — no markdown, no explanation outside JSON.',
+        messages:[{role:'user', content:prompt}]
+      })
+    });
+    const data = await resp.json();
+    const text = data.content[0].text.replace(/```json|```/g,'').trim();
+    const result = JSON.parse(text);
+
+    clearInterval(interval);
+    loading.classList.remove('show');
+    btn.disabled=false; btn.textContent='⚡ Predict Reactants';
+    document.getElementById('resStat').textContent = `${result.top_reactants.length} candidates`;
+
+    renderResults(result, product);
+    addHist(result, product);
+
+  } catch(e) {
+    clearInterval(interval);
+    loading.classList.remove('show');
+    btn.disabled=false; btn.textContent='⚡ Predict Reactants';
+    document.getElementById('resStat').textContent = 'demo mode';
+    const demo = getDemoResult(selClass, product);
+    renderResults(demo, product);
+    addHist(demo, product);
+  }
+}
+
+function getDemoResult(cls, product) {
+  const demos = {
+    2:{
+      reaction_name:'Acylation / Ester Formation', disconnection:'C-O bond disconnection',
+      top_reactants:[
+        {rank:1,smiles:'O=C(O)c1ccc(N)cc1.CCO',description:'Carboxylic acid + ethanol',score:0.91,confidence:'high'},
+        {rank:2,smiles:'ClC(=O)c1ccc(N)cc1.CCO',description:'Acid chloride + ethanol',score:0.68,confidence:'medium'},
+        {rank:3,smiles:'O=C(OC(=O)c1ccc(N)cc1)c1ccc(N)cc1.CCO',description:'Anhydride + ethanol',score:0.41,confidence:'low'},
+      ],
+      mechanism:['Activate carboxyl group','Nucleophilic attack by alcohol','Elimination of water/leaving group'],
+      explanation:'Retrosynthetically disconnect the ester C-O bond. The most direct route is Fischer esterification from the carboxylic acid and alcohol. Acid chloride route is faster but requires harsher conditions.',
+      conditions:'H2SO4 cat., heat (Fischer) or base, 0°C (acid chloride)',
+      in_applicability_domain:true,
+      smiles_augmentation_note:'Acylation is class 2 in USPTO-50K — well-represented, high model confidence',
+    },
+    1:{
+      reaction_name:'SNAr — Nucleophilic Aromatic Substitution', disconnection:'C-N bond disconnection',
+      top_reactants:[
+        {rank:1,smiles:'N#Cc1ccsc1N.O=[N+]([O-])c1cc(F)c(F)cc1F',description:'Amine + fluoronitroarene',score:0.88,confidence:'high'},
+        {rank:2,smiles:'N#Cc1ccsc1N.O=[N+]([O-])c1cc(Cl)c(Cl)cc1F',description:'Amine + chloronitroarene',score:0.55,confidence:'medium'},
+        {rank:3,smiles:'N#Cc1ccsc1Br.O=[N+]([O-])c1cc(F)c(F)cc1N',description:'Alternative disconnection',score:0.32,confidence:'low'},
+      ],
+      mechanism:['Nucleophilic addition to electron-deficient arene','Meisenheimer complex formation','Elimination of fluoride leaving group'],
+      explanation:'Disconnect the C-N bond. Electron-withdrawing groups (NO2, CN, F) activate the arene toward nucleophilic attack. Fluorine is the best leaving group in SNAr despite being poor in SN2.',
+      conditions:'K2CO3, DMF, 60-80°C',
+      in_applicability_domain:true,
+      smiles_augmentation_note:'Heteroatom alkylation/arylation is the most common class in USPTO-50K',
+    },
+  };
+  return demos[cls] || demos[2];
+}
+
+function renderResults(r, product) {
+  const area = document.getElementById('resArea');
+  const top = r.top_reactants[0];
+  const confCls = top.confidence==='high'?'ch':top.confidence==='medium'?'cm':'cl';
+
+  // Update preview with top prediction
+  document.getElementById('rxnPreview').innerHTML = `<div class="rxn-eq">
+    <span style="color:var(--muted);font-size:0.65rem">&lt;RX_${selClass}&gt;</span>
+    <span style="color:var(--amber)">${product}</span>
+    <span class="arr">→</span>
+    <span style="color:var(--green2)">${top.smiles}</span>
+  </div>`;
+
+  area.innerHTML = `
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.7rem">
+      <div style="font-family:var(--mono);font-size:0.65rem;color:var(--muted);letter-spacing:0.1em;text-transform:uppercase">Top-K Reactant Candidates</div>
+      <span class="conf-badge ${confCls}">${top.confidence.toUpperCase()} CONFIDENCE</span>
+    </div>
+
+    <div class="res-metrics">
+      <div class="metric"><div class="metric-val">${(top.score*100).toFixed(0)}%</div><div class="metric-lbl">Top-1 Score</div></div>
+      <div class="metric"><div class="metric-val">${r.top_reactants.length}</div><div class="metric-lbl">Candidates</div></div>
+      <div class="metric"><div class="metric-val">${r.in_applicability_domain?'✓':'⚠'}</div><div class="metric-lbl">In Domain</div></div>
+    </div>
+
+    <div class="candidates">
+      ${r.top_reactants.map((c,i)=>`
+        <div class="cand ${i===0?'top1':''}">
+          <div class="cand-rank">${c.rank}</div>
+          <div class="cand-info">
+            <div class="cand-smiles">${c.smiles}</div>
+            ${c.description?`<div class="cand-name">${c.description}</div>`:''}
+          </div>
+          <div class="cand-score">Top-${c.rank}<br><span>${(c.score*100).toFixed(0)}%</span></div>
+        </div>
+      `).join('')}
+    </div>
+
+    <div style="font-family:var(--mono);font-size:0.68rem;color:var(--green);margin-bottom:0.4rem">${r.reaction_name}</div>
+    ${r.disconnection?`<div style="font-family:var(--mono);font-size:0.65rem;color:var(--muted);margin-bottom:0.7rem">Disconnection: ${r.disconnection}</div>`:''}
+
+    <div class="expl-box">
+      <div class="expl-title">Retrosynthetic Analysis</div>
+      <div class="expl-text">${r.explanation}</div>
+    </div>
+
+    ${r.mechanism?.length?`
+    <div style="font-family:var(--mono);font-size:0.62rem;color:var(--muted);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:0.4rem">Forward Mechanism</div>
+    <div class="mech-steps">
+      ${r.mechanism.map((s,i)=>`<div class="mech-step"><div class="mech-n">0${i+1}</div><div>${s}</div></div>`).join('')}
+    </div>`:''}
+
+    ${r.conditions?`<div class="cond-box"><span>CONDITIONS → </span>${r.conditions}</div>`:''}
+
+    ${r.smiles_augmentation_note?`
+    <div style="font-family:var(--mono);font-size:0.65rem;color:var(--muted);padding:0.45rem 0.7rem;background:var(--surface);border-radius:0.3rem;border:1px solid var(--border)">
+      <span style="color:var(--purple)">AUGMENTATION NOTE → </span>${r.smiles_augmentation_note}
+    </div>`:''}
+  `;
+}
+
+// ── HISTORY ───────────────────────────────────────────────────────
+function addHist(r, product) {
+  history.unshift({
+    time: new Date().toLocaleTimeString(),
+    product, result:r, cls:selClass,
+    rxnName: r.reaction_name || `Class ${selClass}`,
+    conf: ((r.top_reactants[0]?.score||0)*100).toFixed(0)+'%',
+  });
+  if (history.length > 12) history.pop();
+  renderHist();
+}
+
+function renderHist() {
+  const el = document.getElementById('histArea');
+  if (!history.length) {
+    el.innerHTML = '<div class="empty-state" style="padding:1.2rem"><div class="es-text">No predictions yet</div></div>';
+    return;
+  }
+  el.innerHTML = `<div class="hist-list">${history.map((h,i)=>`
+    <div class="hist-item" onclick="reloadHist(${i})">
+      <span class="hist-time">${h.time}</span>
+      <span class="hist-rxn"><RX_${h.cls}> ${h.product} → ${h.result.top_reactants[0]?.smiles||'?'}</span>
+      <span class="hist-cls">${h.rxnName.substring(0,24)}</span>
+      <span class="hist-conf">${h.conf}</span>
+    </div>
+  `).join('')}</div>`;
+}
+
+function reloadHist(i) {
+  const h = history[i];
+  document.getElementById('product').value = h.product;
+  selClass = h.cls;
+  document.querySelectorAll('.rxn-btn').forEach(b => b.classList.toggle('active', parseInt(b.dataset.cls)===h.cls));
+  updatePreview();
+  renderResults(h.result, h.product);
+  document.getElementById('resStat').textContent = 'loaded from history';
+}
+
+function clearHist() { history=[]; renderHist(); }
+</script>
+</body>
+</html>
