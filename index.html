@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ChemPredict — AI Chemistry Platform · Dr. Mushtaq Ali · KIT</title>
+<meta name="description" content="AI-powered solubility prediction and retrosynthesis tools. XGBoost + MPNN models trained on curated datasets.">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#070b07;--s1:#0e130e;--s2:#131a13;--bd:#1e2d1e;
+  --g1:#22c55e;--g2:#4ade80;--g3:#86efac;--gdim:#14532d;--gbg:rgba(34,197,94,0.07);
+  --b1:#3b82f6;--b2:#60a5fa;--bdim:#1e3a8a;--bbg:rgba(59,130,246,0.07);
+  --p1:#a78bfa;--p2:#c4b5fd;--pdim:#4c1d95;--pbg:rgba(167,139,250,0.07);
+  --a1:#f59e0b;--a2:#fbbf24;--abg:rgba(245,158,11,0.07);
+  --tx:#d4e4d4;--mu:#527052;--mu2:#3d543d;
+  --mono:'JetBrains Mono',monospace;--sans:'Inter',sans-serif;}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:var(--bg);color:var(--tx);font-family:var(--sans);min-height:100vh;overflow-x:hidden;}
+body::before{content:'';position:fixed;inset:0;z-index:0;pointer-events:none;
+  background-image:linear-gradient(rgba(34,197,94,0.02) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(34,197,94,0.02) 1px,transparent 1px);
+  background-size:60px 60px;}
+nav{position:sticky;top:0;z-index:100;background:rgba(7,11,7,0.97);
+  backdrop-filter:blur(20px);border-bottom:1px solid var(--bd);
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 2.5rem;height:52px;}
+.brand{display:flex;align-items:center;gap:0.55rem;
+  font-family:var(--mono);font-size:0.85rem;font-weight:600;color:var(--g1);}
+.pulse{width:6px;height:6px;background:var(--g1);border-radius:50%;
+  box-shadow:0 0 8px var(--g1);animation:pulse 2s infinite;}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:0.35;transform:scale(0.8)}}
+.nav-links{display:flex;gap:0.3rem;}
+.nav-link{padding:0.35rem 0.8rem;border-radius:0.3rem;font-size:0.76rem;
+  color:var(--mu);text-decoration:none;transition:all 0.15s;}
+.nav-link:hover{color:var(--tx);background:var(--s2);}
+.hero{position:relative;z-index:1;text-align:center;padding:5rem 2rem 3rem;max-width:900px;margin:0 auto;}
+.eyebrow{font-family:var(--mono);font-size:0.6rem;color:var(--g1);letter-spacing:0.2em;
+  text-transform:uppercase;margin-bottom:1rem;display:flex;align-items:center;justify-content:center;gap:0.8rem;}
+.eyebrow::before,.eyebrow::after{content:'';display:block;width:32px;height:1px;background:var(--g1);opacity:0.3;}
+h1{font-family:var(--mono);font-size:clamp(2rem,5vw,3.8rem);font-weight:600;
+  letter-spacing:-0.04em;line-height:1.05;margin-bottom:1rem;}
+.gc{color:var(--g1);}.bc{color:var(--b2);}.pc{color:var(--p1);}
+.hero p{font-size:0.95rem;color:var(--mu);line-height:1.75;max-width:580px;margin:0 auto 2rem;}
+.btns{display:flex;gap:0.8rem;justify-content:center;flex-wrap:wrap;margin-bottom:3rem;}
+.btn-p{background:linear-gradient(135deg,#14532d,#166534);border:1px solid var(--gdim);
+  border-radius:0.45rem;padding:0.8rem 1.8rem;font-family:var(--mono);font-size:0.82rem;
+  font-weight:600;color:var(--g2);text-decoration:none;transition:all 0.18s;
+  display:inline-flex;align-items:center;gap:0.5rem;}
+.btn-p:hover{box-shadow:0 0 20px rgba(34,197,94,0.2);transform:translateY(-1px);}
+.btn-p2{background:linear-gradient(135deg,#4c1d95,#6d28d9);border-color:#4c1d95;color:var(--p2);}
+.btn-p2:hover{box-shadow:0 0 20px rgba(167,139,250,0.2);}
+.btn-o{background:transparent;border:1px solid var(--bd);border-radius:0.45rem;
+  padding:0.8rem 1.8rem;font-family:var(--mono);font-size:0.82rem;color:var(--mu);
+  text-decoration:none;transition:all 0.18s;}
+.btn-o:hover{border-color:var(--g1);color:var(--g2);}
+.stats{display:flex;justify-content:center;max-width:700px;margin:0 auto;
+  background:var(--s2);border:1px solid var(--bd);border-radius:0.6rem;overflow:hidden;}
+.stat{flex:1;padding:1rem 0.4rem;text-align:center;border-right:1px solid var(--bd);}
+.stat:last-child{border-right:none;}
+.sv{font-family:var(--mono);font-size:1.2rem;font-weight:600;line-height:1;}
+.sl{font-family:var(--mono);font-size:0.52rem;color:var(--mu);letter-spacing:0.08em;text-transform:uppercase;margin-top:0.2rem;}
+.sec{position:relative;z-index:1;max-width:1100px;margin:4rem auto 0;padding:0 2rem;}
+.sec-lbl{font-family:var(--mono);font-size:0.6rem;color:var(--g1);letter-spacing:0.2em;
+  text-transform:uppercase;text-align:center;margin-bottom:0.5rem;}
+h2{font-family:var(--mono);font-size:clamp(1.3rem,2.5vw,1.9rem);font-weight:600;
+  letter-spacing:-0.03em;text-align:center;margin-bottom:0.5rem;}
+.sec-sub{font-size:0.83rem;color:var(--mu);text-align:center;max-width:480px;margin:0 auto 2rem;}
+.tool-grid{display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;margin-bottom:4rem;}
+.tc{background:var(--s2);border:1px solid var(--bd);border-radius:0.85rem;
+  overflow:hidden;transition:all 0.2s;text-decoration:none;color:inherit;display:block;}
+.tc:hover{transform:translateY(-3px);box-shadow:0 12px 40px rgba(0,0,0,0.4);}
+.tc:hover .arr{transform:translateX(4px);}
+.tct{padding:1.8rem;border-bottom:1px solid var(--bd);}
+.tc-icon{font-size:2rem;margin-bottom:0.9rem;}
+.tc-name{font-family:var(--mono);font-size:1rem;font-weight:600;margin-bottom:0.45rem;}
+.tc-desc{font-size:0.82rem;color:var(--mu);line-height:1.65;margin-bottom:0.5rem;}
+.tc-url{font-family:var(--mono);font-size:0.58rem;color:var(--mu2);}
+.tcb{padding:0.9rem 1.4rem;display:flex;align-items:center;justify-content:space-between;}
+.tags{display:flex;gap:0.3rem;flex-wrap:wrap;}
+.tag{font-family:var(--mono);font-size:0.56rem;padding:0.13rem 0.42rem;border-radius:1rem;border:1px solid;}
+.arr{font-size:1rem;color:var(--mu);transition:transform 0.2s;}
+.model-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:1rem;margin-bottom:4rem;}
+.mc{background:var(--s2);border:1px solid var(--bd);border-radius:0.7rem;padding:1.3rem;}
+.mc-lbl{font-family:var(--mono);font-size:0.54rem;letter-spacing:0.12em;text-transform:uppercase;margin-bottom:0.45rem;}
+.mc-name{font-family:var(--mono);font-size:0.88rem;font-weight:600;margin-bottom:0.45rem;}
+.mc-desc{font-size:0.78rem;color:var(--mu);line-height:1.6;margin-bottom:0.7rem;}
+.mf-list{display:flex;flex-direction:column;gap:0.25rem;}
+.mf{font-family:var(--mono);font-size:0.6rem;color:var(--mu2);display:flex;align-items:center;gap:0.4rem;}
+.mf::before{content:'▸';color:var(--g1);flex-shrink:0;}
+.pipe-wrap{margin-bottom:4rem;}
+.pipe{background:var(--s2);border:1px solid var(--bd);border-radius:0.7rem;
+  padding:1.4rem 1.8rem;font-family:var(--mono);font-size:0.7rem;
+  color:var(--mu);line-height:2.1;overflow-x:auto;white-space:pre;}
+.about-card{background:var(--s2);border:1px solid var(--bd);border-radius:0.85rem;
+  padding:1.8rem;display:grid;grid-template-columns:1fr auto;gap:2rem;margin-bottom:4rem;}
+.a-name{font-family:var(--mono);font-size:0.95rem;font-weight:600;margin-bottom:0.45rem;}
+.a-txt{font-size:0.82rem;color:var(--mu);line-height:1.7;margin-bottom:0.7rem;}
+.pub{background:rgba(34,197,94,0.04);border:1px solid rgba(34,197,94,0.14);
+  border-radius:0.45rem;padding:0.9rem 1.1rem;}
+.pub-lbl{font-family:var(--mono);font-size:0.54rem;color:var(--g1);
+  letter-spacing:0.12em;text-transform:uppercase;margin-bottom:0.28rem;}
+.pub-txt{font-size:0.76rem;color:var(--mu);line-height:1.6;}
+.pub-txt a{color:var(--g2);text-decoration:none;}
+.a-links{display:flex;flex-direction:column;gap:0.35rem;min-width:180px;}
+.al{font-family:var(--mono);font-size:0.62rem;color:var(--g1);
+  text-decoration:none;padding:0.28rem 0;border-bottom:1px solid var(--bd);}
+.al:hover{color:var(--g2);}
+footer{position:relative;z-index:1;border-top:1px solid var(--bd);
+  padding:1.2rem 2.5rem;display:flex;justify-content:space-between;flex-wrap:wrap;gap:0.4rem;}
+.ft{font-family:var(--mono);font-size:0.57rem;color:var(--mu);}
+.ft a{color:var(--g1);text-decoration:none;}
+@media(max-width:800px){
+  .tool-grid{grid-template-columns:1fr;}
+  .model-grid{grid-template-columns:1fr;}
+  .about-card{grid-template-columns:1fr;}
+}
+</style>
+</head>
+<body>
+<nav>
+  <div class="brand"><div class="pulse"></div>ChemPredict</div>
+  <div class="nav-links">
+    <a href="solubility/index.html" class="nav-link">💧 Solubility</a>
+    <a href="rxnpredict/index.html" class="nav-link">⚗️ Retrosynthesis</a>
+    <a href="https://github.com/ali1810/chempredict" class="nav-link" target="_blank">GitHub</a>
+    <a href="https://pubs.acs.org/doi/10.1021/acs.jcim.4c02399" class="nav-link" target="_blank">Publication</a>
+  </div>
+</nav>
+<div class="hero">
+  <div class="eyebrow">KIT PhD Research · ACS JCIM 2025 · Open Source</div>
+  <h1><span class="gc">AI-Driven</span> Chemistry<br>Prediction Tools</h1>
+  <p>Water solubility prediction and retrosynthesis planning using machine learning trained on curated chemical datasets. XGBoost · MPNN · Transformer seq2seq.</p>
+  <div class="btns">
+    <a href="solubility/index.html" class="btn-p">💧 Solubility Prediction</a>
+    <a href="rxnpredict/index.html" class="btn-p btn-p2">⚗️ Reaction Prediction</a>
+    <a href="https://github.com/ali1810/chempredict" class="btn-o" target="_blank">⭐ View Source</a>
+  </div>
+  <div class="stats">
+    <div class="stat"><div class="sv" style="color:var(--g1)">30K+</div><div class="sl">Compounds</div></div>
+    <div class="stat"><div class="sv" style="color:var(--p1)">298</div><div class="sl">XGB Features</div></div>
+    <div class="stat"><div class="sv" style="color:var(--p2)">MPNN</div><div class="sl">Graph NN</div></div>
+    <div class="stat"><div class="sv" style="color:var(--b2)">50K</div><div class="sl">USPTO Rxns</div></div>
+    <div class="stat"><div class="sv" style="color:var(--a2)">2025</div><div class="sl">ACS JCIM</div></div>
+  </div>
+</div>
+<div class="sec">
+  <div class="sec-lbl">Tools</div>
+  <h2>Two Interactive Applications</h2>
+  <p class="sec-sub">Run directly in your browser — no installation needed.</p>
+  <div class="tool-grid">
+    <a href="solubility/index.html" class="tc">
+      <div class="tct" style="background:rgba(34,197,94,0.02)">
+        <div class="tc-icon">💧</div>
+        <div class="tc-name" style="color:var(--g2)">Solubility Prediction</div>
+        <div class="tc-desc">XGBoost (298 tabular features) and MPNN (molecular graph) predictions side by side. Applicability domain scoring, solubility class, mol/L, and g/L outputs.</div>
+        <div class="tc-url">ali1810.github.io/chempredict/solubility/</div>
+      </div>
+      <div class="tcb">
+        <div class="tags">
+          <span class="tag" style="background:var(--gbg);color:var(--g2);border-color:rgba(34,197,94,0.2)">XGBoost</span>
+          <span class="tag" style="background:var(--pbg);color:var(--p2);border-color:rgba(167,139,250,0.2)">MPNN</span>
+          <span class="tag" style="background:var(--abg);color:var(--a2);border-color:rgba(245,158,11,0.2)">Domain check</span>
+        </div>
+        <div class="arr">→</div>
+      </div>
+    </a>
+    <a href="rxnpredict/index.html" class="tc">
+      <div class="tct" style="background:rgba(167,139,250,0.02)">
+        <div class="tc-icon">⚗️</div>
+        <div class="tc-name" style="color:var(--p2)">Retrosynthesis Prediction</div>
+        <div class="tc-desc">Transformer seq2seq on USPTO-50K with 16× SMILES augmentation. Top-k ranked reactant candidates with reaction class selection and mechanism explanation.</div>
+        <div class="tc-url">ali1810.github.io/chempredict/rxnpredict/</div>
+      </div>
+      <div class="tcb">
+        <div class="tags">
+          <span class="tag" style="background:var(--pbg);color:var(--p2);border-color:rgba(167,139,250,0.2)">Transformer</span>
+          <span class="tag" style="background:var(--bbg);color:var(--b2);border-color:rgba(59,130,246,0.2)">USPTO-50K</span>
+          <span class="tag" style="background:var(--gbg);color:var(--g2);border-color:rgba(34,197,94,0.2)">Top-1: 61.3%</span>
+        </div>
+        <div class="arr">→</div>
+      </div>
+    </a>
+  </div>
+
+  <div class="sec-lbl">Architecture</div>
+  <h2>Three ML Models</h2>
+  <p class="sec-sub">Each model trained on curated datasets from KIT PhD research.</p>
+  <div class="model-grid">
+    <div class="mc">
+      <div class="mc-lbl" style="color:var(--g1)">Solubility · Model 1</div>
+      <div class="mc-name">XGBoost · 298 Features</div>
+      <div class="mc-desc">Fast, interpretable gradient boosting on tabular molecular descriptors.</div>
+      <div class="mf-list">
+        <div class="mf">125 RDKit molecular descriptors</div>
+        <div class="mf">128-bit Morgan fingerprints</div>
+        <div class="mf">7 functional group flags</div>
+        <div class="mf">38 structural features</div>
+        <div class="mf">MW &lt; 600 domain check</div>
+      </div>
+    </div>
+    <div class="mc" style="border-color:rgba(167,139,250,0.18);background:rgba(167,139,250,0.02)">
+      <div class="mc-lbl" style="color:var(--p1)">Solubility · Model 2</div>
+      <div class="mc-name">MPNN · Molecular Graph</div>
+      <div class="mc-desc">Message-passing NN on molecular graphs without handcrafted features.</div>
+      <div class="mf-list">
+        <div class="mf">51 atom node features</div>
+        <div class="mf">6 bond edge features</div>
+        <div class="mf">4 message-passing layers</div>
+        <div class="mf">128-dim node embeddings</div>
+        <div class="mf">Mean + max readout → MLP</div>
+      </div>
+    </div>
+    <div class="mc" style="border-color:rgba(59,130,246,0.18);background:rgba(59,130,246,0.02)">
+      <div class="mc-lbl" style="color:var(--b2)">Retrosynthesis</div>
+      <div class="mc-name">Transformer Seq2Seq</div>
+      <div class="mc-desc">Product SMILES → reactant SMILES via neural machine translation.</div>
+      <div class="mf-list">
+        <div class="mf">USPTO-50K · 10 reaction classes</div>
+        <div class="mf">16× SMILES augmentation</div>
+        <div class="mf">256-dim · 8 heads · 6 layers</div>
+        <div class="mf">Top-1: 61.3% · Top-5: 74.2%</div>
+        <div class="mf">Canonicalisation deduplication</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="pipe-wrap">
+    <div class="sec-lbl" style="text-align:left">Pipeline</div>
+    <div class="pipe"><span style="color:var(--g1)">XGBoost:</span>  SMILES → RDKit (125 desc + 128 Morgan + 7 FG + 38 struct) → 298 features → logS
+<span style="color:var(--p1)">MPNN:</span>     SMILES → graph (atoms=nodes, bonds=edges) → 4× MP layers → readout → logS
+<span style="color:var(--b2)">Retrosyn:</span> Product SMILES + &lt;RX_N&gt; token → Transformer encoder → beam search → top-k reactants</div>
+  </div>
+
+  <div class="sec-lbl">Author</div>
+  <div class="about-card">
+    <div>
+      <div class="a-name">Dr. Mushtaq Ali</div>
+      <p class="a-txt">PhD in Computational Chemistry &amp; ML from KIT (Institute for Biological and Chemical Systems). Dual-challenge PhD: reaction prediction on USPTO-50K and GNN/transformer solubility prediction on 30,000+ PubChem compounds.</p>
+      <div class="pub">
+        <div class="pub-lbl">ACS JCIM 2025</div>
+        <div class="pub-txt">Ali, M. et al. Advancing Aqueous Solubility Prediction: A Machine Learning Approach for Organic Compounds Using a Curated Dataset. <a href="https://pubs.acs.org/doi/10.1021/acs.jcim.4c02399" target="_blank">doi:10.1021/acs.jcim.4c02399</a></div>
+      </div>
+    </div>
+    <div class="a-links">
+      <a href="https://github.com/ali1810" class="al" target="_blank">⭐ github.com/ali1810</a>
+      <a href="https://orcid.org/0009-0007-6808-5783" class="al" target="_blank">🔬 ORCID 0009-0007-6808-5783</a>
+      <a href="https://aqua-solubility-prediction.streamlit.app" class="al" target="_blank">🌊 Streamlit Demo</a>
+      <a href="mailto:info@dream2europe.com" class="al">✉ info@dream2europe.com</a>
+      <a href="https://linkedin.com/in/mushtaq-ali" class="al" target="_blank">💼 LinkedIn</a>
+    </div>
+  </div>
+</div>
+<footer>
+  <div class="ft">ChemPredict · Dr. Mushtaq Ali · KIT · <a href="https://github.com/ali1810/chempredict">github.com/ali1810/chempredict</a></div>
+  <div class="ft"><a href="https://pubs.acs.org/doi/10.1021/acs.jcim.4c02399">ACS JCIM 2025</a> · MIT License</div>
+</footer>
+</body>
+</html>
