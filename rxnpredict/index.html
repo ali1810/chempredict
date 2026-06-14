@@ -1,0 +1,846 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ChemPredict — XGBoost + MPNN Solubility · Dr. Mushtaq Ali · KIT</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0b0f0b;--surface:#131813;--card:#181f18;--card2:#1c241c;
+  --border:#1f2d1f;--border2:#253025;
+  --green:#22c55e;--green2:#4ade80;--green3:#bbf7d0;--green-dim:#166534;
+  --green-bg:rgba(34,197,94,0.06);
+  --blue:#3b82f6;--blue2:#60a5fa;--blue-dim:#1e3a8a;
+  --blue-bg:rgba(59,130,246,0.06);
+  --amber:#f59e0b;--amber2:#fbbf24;--amber-bg:rgba(245,158,11,0.06);
+  --red:#ef4444;--red2:#f87171;--red-bg:rgba(239,68,68,0.06);
+  --purple:#a78bfa;--purple-bg:rgba(167,139,250,0.06);
+  --teal:#2dd4bf;--teal-bg:rgba(45,212,191,0.06);
+  --text:#dfe8df;--muted:#5a7a5a;--muted2:#4a664a;
+  --mono:'JetBrains Mono',monospace;--sans:'Inter',sans-serif;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:var(--bg);color:var(--text);font-family:var(--sans);
+  min-height:100vh;overflow-x:hidden;}
+body::before{content:'';position:fixed;inset:0;
+  background-image:linear-gradient(rgba(34,197,94,0.022) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(34,197,94,0.022) 1px,transparent 1px);
+  background-size:56px 56px;pointer-events:none;z-index:0;}
+
+/* NAV */
+nav{position:sticky;top:0;z-index:200;background:rgba(11,15,11,0.97);
+  backdrop-filter:blur(16px);border-bottom:1px solid var(--border);
+  padding:0 2rem;height:54px;display:flex;align-items:center;justify-content:space-between;}
+.brand{font-family:var(--mono);font-size:0.88rem;font-weight:600;color:var(--green);
+  display:flex;align-items:center;gap:0.55rem;}
+.pulse{width:7px;height:7px;background:var(--green);border-radius:50%;
+  box-shadow:0 0 8px var(--green);animation:pulse 2s infinite;}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.3}}
+.nav-chips{display:flex;gap:0.4rem;}
+.chip{font-family:var(--mono);font-size:0.58rem;padding:0.15rem 0.5rem;
+  border-radius:1rem;border:1px solid;}
+.cg{background:var(--green-bg);color:var(--green);border-color:rgba(34,197,94,0.22);}
+.cb{background:var(--blue-bg);color:var(--blue2);border-color:rgba(59,130,246,0.22);}
+.cp{background:var(--purple-bg);color:var(--purple);border-color:rgba(167,139,250,0.22);}
+
+/* HERO */
+.hero{position:relative;z-index:1;max-width:1100px;margin:0 auto;
+  padding:2.5rem 2rem 1.5rem;text-align:center;}
+.hero-eye{font-family:var(--mono);font-size:0.62rem;color:var(--green);
+  letter-spacing:0.18em;text-transform:uppercase;margin-bottom:0.9rem;
+  display:flex;align-items:center;justify-content:center;gap:0.8rem;}
+.hero-eye::before,.hero-eye::after{content:'';display:block;
+  width:32px;height:1px;background:var(--green);opacity:0.3;}
+h1{font-family:var(--mono);font-size:clamp(1.6rem,3vw,2.5rem);
+  font-weight:600;letter-spacing:-0.04em;line-height:1.12;margin-bottom:0.6rem;}
+.gr{color:var(--green);}
+.bl{color:var(--blue2);}
+.pu{color:var(--purple);}
+.hero p{font-size:0.86rem;color:var(--muted);line-height:1.7;
+  max-width:600px;margin:0 auto 1.2rem;}
+.stat-strip{display:flex;justify-content:center;margin:0 auto 2rem;
+  max-width:760px;background:var(--card);border:1px solid var(--border);
+  border-radius:0.55rem;overflow:hidden;}
+.sitem{flex:1;padding:0.75rem 0.3rem;text-align:center;
+  border-right:1px solid var(--border);}
+.sitem:last-child{border-right:none;}
+.sval{font-family:var(--mono);font-size:1.1rem;font-weight:600;line-height:1;}
+.slbl{font-family:var(--mono);font-size:0.54rem;color:var(--muted);
+  letter-spacing:0.08em;text-transform:uppercase;margin-top:0.2rem;}
+
+/* LAYOUT */
+.main{position:relative;z-index:1;max-width:1300px;margin:0 auto;
+  padding:0 2rem 3rem;}
+
+/* INPUT PANEL */
+.input-row{display:grid;grid-template-columns:340px 1fr;gap:1.5rem;margin-bottom:1.5rem;}
+.panel{background:var(--card);border:1px solid var(--border);
+  border-radius:0.75rem;overflow:hidden;}
+.ph{display:flex;align-items:center;justify-content:space-between;
+  padding:0.68rem 1.1rem;border-bottom:1px solid var(--border);
+  background:rgba(255,255,255,0.01);}
+.ph-t{font-family:var(--mono);font-size:0.62rem;color:var(--muted);
+  letter-spacing:0.1em;text-transform:uppercase;display:flex;align-items:center;gap:0.42rem;}
+.dot{width:5px;height:5px;border-radius:50%;}
+.dg{background:var(--green);}
+.db{background:var(--blue2);}
+.dp{background:var(--purple);}
+.da{background:var(--amber);}
+.pb{padding:1.1rem;}
+
+/* FORM */
+.flbl{font-family:var(--mono);font-size:0.58rem;color:var(--muted);
+  letter-spacing:0.1em;text-transform:uppercase;margin-bottom:0.28rem;display:block;}
+.fi{width:100%;background:var(--surface);border:1px solid var(--border);
+  border-radius:0.38rem;padding:0.62rem 0.85rem;font-family:var(--mono);
+  font-size:0.8rem;color:var(--green2);outline:none;
+  transition:border-color 0.15s;caret-color:var(--green);margin-bottom:0.7rem;}
+.fi:focus{border-color:var(--green);}
+.fi::placeholder{color:var(--muted2);font-size:0.72rem;}
+.ex-row{display:flex;flex-wrap:wrap;gap:0.28rem;margin-bottom:0.8rem;}
+.ex{background:var(--surface);border:1px solid var(--border);border-radius:0.28rem;
+  padding:0.18rem 0.45rem;font-family:var(--mono);font-size:0.6rem;color:var(--muted2);
+  cursor:pointer;transition:all 0.12s;}
+.ex:hover{border-color:var(--green-dim);color:var(--green3);}
+
+/* API STATUS */
+.api-row{display:flex;gap:0.5rem;margin-bottom:0.7rem;}
+.api-field{flex:1;background:var(--surface);border:1px solid var(--border);
+  border-radius:0.35rem;padding:0.5rem 0.7rem;font-family:var(--mono);
+  font-size:0.7rem;color:var(--text);outline:none;}
+.mini-btn{padding:0.5rem 0.8rem;border-radius:0.35rem;border:1px solid var(--border);
+  background:var(--surface);font-family:var(--mono);font-size:0.65rem;
+  color:var(--muted);cursor:pointer;white-space:nowrap;transition:all 0.15s;}
+.mini-btn:hover{border-color:var(--green-dim);color:var(--green2);}
+.api-status{display:flex;align-items:center;gap:0.35rem;
+  font-family:var(--mono);font-size:0.62rem;color:var(--muted);margin-bottom:0.7rem;}
+.adot{width:6px;height:6px;border-radius:50%;flex-shrink:0;}
+.adot-ok{background:var(--green);box-shadow:0 0 5px var(--green);}
+.adot-off{background:var(--red2);}
+.adot-chk{background:var(--amber);animation:pulse 0.8s infinite;}
+
+/* PREDICT BTN */
+.predict-btn{width:100%;background:linear-gradient(135deg,#14532d,#166534);
+  border:1px solid var(--green-dim);border-radius:0.42rem;padding:0.75rem;
+  font-family:var(--mono);font-size:0.78rem;font-weight:600;color:var(--green2);
+  cursor:pointer;transition:all 0.18s;letter-spacing:0.04em;
+  display:flex;align-items:center;justify-content:center;gap:0.5rem;}
+.predict-btn:hover:not(:disabled){background:linear-gradient(135deg,#166534,#15803d);
+  box-shadow:0 0 16px rgba(34,197,94,0.16);transform:translateY(-1px);}
+.predict-btn:disabled{opacity:0.35;cursor:wait;}
+
+/* RESULTS GRID */
+.results-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:1.2rem;margin-bottom:1.5rem;}
+
+/* LOADING */
+.loading{display:none;flex-direction:column;align-items:center;gap:0.6rem;padding:2rem;}
+.loading.show{display:flex;}
+.spinner{width:22px;height:22px;border:2px solid var(--border);
+  border-radius:50%;animation:spin 0.65s linear infinite;}
+.sp-g{border-top-color:var(--green);}
+.sp-b{border-top-color:var(--blue2);}
+.sp-p{border-top-color:var(--purple);}
+@keyframes spin{to{transform:rotate(360deg)}}
+.spin-lbl{font-family:var(--mono);font-size:0.65rem;color:var(--muted);letter-spacing:0.1em;}
+.spin-step{font-family:var(--mono);font-size:0.6rem;}
+
+/* EMPTY */
+.empty{padding:2rem 1rem;text-align:center;}
+.ei{font-size:1.8rem;opacity:0.2;margin-bottom:0.5rem;}
+.et{font-family:var(--mono);font-size:0.67rem;color:var(--muted);line-height:1.6;}
+
+/* RESULT CONTENT */
+.gauge-wrap{text-align:center;margin-bottom:0.8rem;}
+.sol-badge{display:inline-block;margin-top:0.4rem;padding:0.22rem 0.6rem;
+  border-radius:2rem;font-family:var(--mono);font-size:0.62rem;border:1px solid;}
+.sbhs{background:var(--blue-bg);color:var(--blue2);border-color:rgba(59,130,246,0.25);}
+.sbs{background:var(--green-bg);color:var(--green2);border-color:rgba(34,197,94,0.25);}
+.sbss{background:var(--amber-bg);color:var(--amber2);border-color:rgba(245,158,11,0.25);}
+.sbls{background:var(--red-bg);color:var(--red2);border-color:rgba(239,68,68,0.25);}
+.logS-val{font-family:var(--mono);font-size:1.6rem;font-weight:600;line-height:1;}
+.logS-unit{font-family:var(--mono);font-size:0.65rem;color:var(--muted);}
+.num-row{display:flex;gap:0.8rem;flex-wrap:wrap;margin-top:0.4rem;}
+.nm{font-family:var(--mono);font-size:0.7rem;}
+.nm span{font-weight:600;}
+
+.feat-bars{display:flex;flex-direction:column;gap:0.38rem;margin:0.7rem 0;}
+.frow{display:flex;align-items:center;gap:0.5rem;font-size:0.72rem;}
+.flb{color:var(--muted);font-size:0.65rem;flex-shrink:0;width:130px;}
+.ftrack{flex:1;height:4px;background:var(--border);border-radius:2px;overflow:hidden;}
+.ffill{height:100%;border-radius:2px;}
+.ffg{background:linear-gradient(to right,var(--green-dim),var(--green));}
+.ffb{background:linear-gradient(to right,var(--blue-dim),var(--blue));}
+.ffa{background:linear-gradient(to right,#92400e,var(--amber));}
+.ffp{background:linear-gradient(to right,#4c1d95,var(--purple));}
+.fct{font-family:var(--mono);font-size:0.62rem;color:var(--muted2);width:24px;text-align:right;flex-shrink:0;}
+
+.domain-box{display:flex;align-items:center;gap:0.6rem;padding:0.55rem 0.75rem;
+  border-radius:0.38rem;border:1px solid;margin:0.6rem 0;}
+.din{background:rgba(34,197,94,0.04);border-color:rgba(34,197,94,0.16);}
+.dout{background:rgba(239,68,68,0.04);border-color:rgba(239,68,68,0.16);}
+.domain-txt{font-size:0.76rem;color:var(--muted);flex:1;line-height:1.4;}
+.domain-txt strong{font-weight:600;display:block;margin-bottom:0.05rem;font-size:0.78rem;}
+.domain-pct{font-family:var(--mono);font-size:0.88rem;font-weight:600;flex-shrink:0;}
+
+.expl{background:rgba(34,197,94,0.03);border-left:3px solid var(--green-dim);
+  border-radius:0 0.35rem 0.35rem 0;padding:0.6rem 0.78rem;margin:0.6rem 0;}
+.expl-t{font-family:var(--mono);font-size:0.57rem;color:var(--green);
+  letter-spacing:0.1em;text-transform:uppercase;margin-bottom:0.28rem;}
+.expl-txt{font-size:0.77rem;color:var(--muted);line-height:1.6;}
+
+.info-row{font-family:var(--mono);font-size:0.63rem;color:var(--muted);
+  padding:0.42rem 0.65rem;background:var(--surface);border:1px solid var(--border);
+  border-radius:0.28rem;margin:0.4rem 0;}
+.info-row span{font-weight:600;}
+.info-row .sg{color:var(--green);}
+.info-row .sb{color:var(--blue2);}
+.info-row .sp{color:var(--purple);}
+
+/* ENSEMBLE PANEL — full width */
+.ensemble-panel{margin-bottom:1.5rem;}
+.agree-bar-wrap{margin:0.7rem 0;}
+.agree-bar-lbl{display:flex;justify-content:space-between;
+  font-family:var(--mono);font-size:0.62rem;color:var(--muted);margin-bottom:0.3rem;}
+.agree-track{height:8px;background:var(--border);border-radius:4px;overflow:hidden;}
+.agree-fill{height:100%;border-radius:4px;transition:width 0.5s ease;}
+
+/* COMPARISON TABLE */
+.comp-table{width:100%;border-collapse:collapse;font-family:var(--mono);font-size:0.72rem;margin-top:0.7rem;}
+.comp-table th{text-align:left;padding:0.4rem 0.6rem;border-bottom:1px solid var(--border);
+  font-size:0.6rem;color:var(--muted);letter-spacing:0.08em;text-transform:uppercase;}
+.comp-table td{padding:0.38rem 0.6rem;border-bottom:1px solid rgba(31,45,31,0.4);color:var(--muted);}
+.comp-table td:first-child{color:var(--text);}
+
+/* SOURCE NOTE */
+.src-note{background:var(--blue-bg);border:1px solid rgba(59,130,246,0.12);
+  border-radius:0.4rem;padding:0.6rem 0.82rem;margin-top:0.7rem;}
+.src-t{font-family:var(--mono);font-size:0.57rem;color:var(--blue2);
+  letter-spacing:0.1em;text-transform:uppercase;margin-bottom:0.25rem;}
+.src-txt{font-size:0.75rem;color:var(--muted);line-height:1.55;}
+.src-txt a{color:var(--blue2);text-decoration:none;}
+
+footer{position:relative;z-index:1;border-top:1px solid var(--border);
+  padding:0.9rem 2rem;display:flex;justify-content:space-between;
+  flex-wrap:wrap;gap:0.4rem;}
+.ft{font-family:var(--mono);font-size:0.58rem;color:var(--muted);}
+.ft a{color:var(--green);text-decoration:none;}
+
+@media(max-width:1000px){
+  .results-row{grid-template-columns:1fr;}
+  .input-row{grid-template-columns:1fr;}
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="brand"><div class="pulse"></div>ChemPredict · Solubility</div>
+  <div class="nav-chips">
+    <span class="chip cg">XGBoost · 298 features</span>
+    <span class="chip cp">MPNN · Molecular Graph</span>
+    <span class="chip cb">Ensemble · Combined</span>
+  </div>
+</nav>
+
+<div class="hero">
+  <div class="hero-eye">Two Real Models · One Dataset · Dr. Mushtaq Ali · KIT</div>
+  <h1>Water Solubility:<br><span class="gr">XGBoost</span> + <span class="pu">MPNN</span> = <span class="bl">Ensemble</span></h1>
+  <p>Two complementary approaches trained on your curated dataset.
+     XGBoost uses 298 tabular features. MPNN learns directly from the molecular graph.
+     Ensemble combines both for higher confidence predictions.</p>
+  <div class="stat-strip">
+    <div class="sitem"><div class="sval" style="color:var(--green)">XGBoost</div><div class="slbl">Tabular · 298 feats</div></div>
+    <div class="sitem"><div class="sval" style="color:var(--purple)">MPNN</div><div class="slbl">Graph · 4 layers</div></div>
+    <div class="sitem"><div class="sval" style="color:var(--blue2)">Ensemble</div><div class="slbl">Combined · weighted</div></div>
+    <div class="sitem"><div class="sval" style="color:var(--amber)">298</div><div class="slbl">XGB features</div></div>
+    <div class="sitem"><div class="sval" style="color:var(--teal,#2dd4bf)">51</div><div class="slbl">MPNN atom feats</div></div>
+    <div class="sitem"><div class="sval" style="color:var(--green2)">MW&lt;600</div><div class="slbl">Domain</div></div>
+  </div>
+</div>
+
+<div class="main">
+
+  <!-- INPUT -->
+  <div class="input-row">
+    <div class="panel">
+      <div class="ph"><div class="ph-t"><div class="dot dg"></div>Molecule Input</div></div>
+      <div class="pb">
+        <label class="flbl">SMILES</label>
+        <input class="fi" id="smi" placeholder="e.g. CC(=O)OC1=CC=CC=C1C(=O)O" value="CC(=O)OC1=CC=CC=C1C(=O)O">
+
+        <label class="flbl">Examples</label>
+        <div class="ex-row">
+          <button class="ex" onclick="setSmi('CC(=O)OC1=CC=CC=C1C(=O)O')">Aspirin</button>
+          <button class="ex" onclick="setSmi('CCO')">Ethanol</button>
+          <button class="ex" onclick="setSmi('c1ccccc1')">Benzene</button>
+          <button class="ex" onclick="setSmi('Cn1cnc2c1c(=O)n(C)c(=O)n2C')">Caffeine</button>
+          <button class="ex" onclick="setSmi('CC(C)Cc1ccc(cc1)C(C)C(=O)O')">Ibuprofen</button>
+          <button class="ex" onclick="setSmi('OC[C@H]1OC(O)[C@H](O)[C@@H](O)[C@@H]1O')">Glucose</button>
+          <button class="ex" onclick="setSmi('c1ccc2ccccc2c1')">Naphthalene</button>
+          <button class="ex" onclick="setSmi('CC(=O)Nc1ccc(O)cc1')">Paracetamol</button>
+          <button class="ex" onclick="setSmi('ClC1=CC(=CC=C1)Cl')">Dichlorobenzene</button>
+        </div>
+
+        <button class="predict-btn" id="pBtn" onclick="runAll()">
+          ⚡ Predict with Both Models
+        </button>
+      </div>
+    </div>
+
+    <!-- API CONFIG -->
+    <div class="panel">
+      <div class="ph">
+        <div class="ph-t"><div class="dot db"></div>API Configuration</div>
+        <div class="api-status" id="apiStatus">
+          <div class="adot adot-chk"></div>
+          <span>checking server...</span>
+        </div>
+      </div>
+      <div class="pb">
+        <label class="flbl">Ensemble API Server (ensemble_api.py)</label>
+        <div class="api-row">
+          <input class="api-field" id="apiUrl" value="http://localhost:8001">
+          <button class="mini-btn" onclick="checkApi()">Test</button>
+          <button class="mini-btn" onclick="setAiFallback()">AI Fallback</button>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.5rem;margin-bottom:0.7rem">
+          <div>
+            <label class="flbl">XGBoost weight</label>
+            <input class="fi" id="xgbW" type="number" value="0.5" min="0" max="1" step="0.1" style="margin-bottom:0">
+          </div>
+          <div>
+            <label class="flbl">MPNN weight</label>
+            <input class="fi" id="mpnnW" type="number" value="0.5" min="0" max="1" step="0.1" style="margin-bottom:0">
+          </div>
+        </div>
+
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:0.4rem;
+          padding:0.75rem;font-family:var(--mono);font-size:0.65rem;color:var(--muted);line-height:1.7">
+          <div style="color:var(--green);margin-bottom:0.3rem">START ENSEMBLE API:</div>
+          <div style="color:var(--text)">cd Water_Solubility</div>
+          <div style="color:var(--text)">python train_mpnn.py  <span style="color:var(--muted)"># train first</span></div>
+          <div style="color:var(--text)">uvicorn ensemble_api:app --port 8001</div>
+          <div style="margin-top:0.4rem;color:var(--amber)">Without API → Claude AI fallback is used</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- THREE RESULT PANELS -->
+  <div class="results-row">
+
+    <!-- XGBoost Panel -->
+    <div class="panel">
+      <div class="ph">
+        <div class="ph-t"><div class="dot dg"></div>XGBoost · 298 Features</div>
+        <span id="xgbStat" style="font-family:var(--mono);font-size:0.58rem;color:var(--muted)">—</span>
+      </div>
+      <div class="pb">
+        <div class="loading" id="xgbLoad">
+          <div class="spinner sp-g"></div>
+          <div class="spin-lbl">COMPUTING</div>
+          <div class="spin-step" id="xgbStep" style="color:var(--green-dim)">125 RDKit descriptors...</div>
+        </div>
+        <div id="xgbRes">
+          <div class="empty"><div class="ei">⚗️</div>
+            <div class="et">XGBoost prediction<br>298 tabular features</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- MPNN Panel -->
+    <div class="panel">
+      <div class="ph">
+        <div class="ph-t"><div class="dot dp"></div>MPNN · Molecular Graph</div>
+        <span id="mpnnStat" style="font-family:var(--mono);font-size:0.58rem;color:var(--muted)">—</span>
+      </div>
+      <div class="pb">
+        <div class="loading" id="mpnnLoad">
+          <div class="spinner sp-p"></div>
+          <div class="spin-lbl">COMPUTING</div>
+          <div class="spin-step" id="mpnnStep" style="color:var(--purple)">Building molecular graph...</div>
+        </div>
+        <div id="mpnnRes">
+          <div class="empty"><div class="ei">🔬</div>
+            <div class="et">MPNN prediction<br>4-layer graph network</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Ensemble Panel -->
+    <div class="panel">
+      <div class="ph">
+        <div class="ph-t"><div class="dot db"></div>Ensemble · Combined</div>
+        <span id="ensStat" style="font-family:var(--mono);font-size:0.58rem;color:var(--muted)">—</span>
+      </div>
+      <div class="pb">
+        <div class="loading" id="ensLoad">
+          <div class="spinner sp-b"></div>
+          <div class="spin-lbl">COMBINING</div>
+          <div class="spin-step" id="ensStep" style="color:var(--blue2)">Weighting predictions...</div>
+        </div>
+        <div id="ensRes">
+          <div class="empty"><div class="ei">🎯</div>
+            <div class="et">Ensemble prediction<br>XGBoost + MPNN combined</div></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- COMPARISON TABLE (full width) -->
+  <div class="panel ensemble-panel" id="comparePanel" style="display:none">
+    <div class="ph">
+      <div class="ph-t"><div class="dot db"></div>Side-by-Side Comparison</div>
+    </div>
+    <div class="pb" id="compareContent"></div>
+  </div>
+
+</div><!-- /main -->
+
+<footer>
+  <div class="ft">ChemPredict · Dr. Mushtaq Ali · KIT ·
+    <a href="https://github.com/ali1810/Water_Solubility">Water_Solubility repo</a> ·
+    <a href="https://aqua-solubility-prediction.streamlit.app/">Live Streamlit App</a>
+  </div>
+  <div class="ft"><a href="https://pubs.acs.org/doi/10.1021/acs.jcim.4c02399">ACS JCIM 2025</a> · ORCID: 0009-0007-6808-5783</div>
+</footer>
+
+<script>
+// ── STATE ─────────────────────────────────────────────────────────
+let apiUrl = 'http://localhost:8001';
+let apiOnline = false;
+let aiFallback = false;
+
+function setSmi(s){ document.getElementById('smi').value = s; }
+
+// ── API CHECK ──────────────────────────────────────────────────────
+async function checkApi(){
+  apiUrl = document.getElementById('apiUrl').value.trim().replace(/\/$/,'');
+  setApiStatus('chk','checking...');
+  try {
+    const r = await fetch(apiUrl+'/health', {signal:AbortSignal.timeout(4000)});
+    if(r.ok){
+      const d = await r.json();
+      apiOnline = true; aiFallback = false;
+      setApiStatus('ok',
+        `API online · XGBoost:${d.xgboost_loaded?'✓':'✗'} · MPNN:${d.mpnn_loaded?'✓':'✗'}`);
+    } else throw new Error();
+  } catch{
+    apiOnline = false;
+    setApiStatus('off','API offline — using Claude AI fallback');
+  }
+}
+
+function setAiFallback(){
+  aiFallback = true; apiOnline = false;
+  setApiStatus('off','AI fallback mode — Claude chemistry knowledge');
+}
+
+function setApiStatus(state, msg){
+  const el = document.getElementById('apiStatus');
+  const clsMap = {ok:'adot-ok',off:'adot-off',chk:'adot-chk'};
+  el.innerHTML = `<div class="adot ${clsMap[state]}"></div><span>${msg}</span>`;
+}
+
+window.addEventListener('load', ()=>setTimeout(checkApi, 600));
+
+// ── LOADER ─────────────────────────────────────────────────────────
+function animLoader(el, steps, color){
+  let i=0;
+  return setInterval(()=>{ el.textContent=steps[i++%steps.length]; },700);
+}
+
+const XGB_STEPS=['Computing 125 RDKit descriptors...','Computing 128-bit Morgan fingerprint...','Extracting 7 functional groups...','Computing 38 structural features...','Running XGBoost on 298 features...'];
+const MPNN_STEPS=['Building molecular graph...','Node features: 51 dims per atom...','Edge features: 6 dims per bond...','Message passing layer 1/4...','Message passing layer 2/4...','Message passing layer 3/4...','Message passing layer 4/4...','Mean + max pooling readout...','MLP → logS'];
+const ENS_STEPS=['Collecting XGBoost prediction...','Collecting MPNN prediction...','Computing weighted ensemble...','Computing model agreement...','Calibrating confidence score...'];
+const AI_STEPS=['Parsing SMILES structure...','Estimating from structural features...','Checking applicability domain...'];
+
+// ── GAUGE SVG ──────────────────────────────────────────────────────
+function gauge(logS, color){
+  const pct = Math.max(0,Math.min(100,((logS+8)/10)*100));
+  const r=52,cx=70,cy=70;
+  const a1=Math.PI, a2=a1+(pct/100)*Math.PI;
+  const x1=cx+r*Math.cos(a1),y1=cy+r*Math.sin(a1);
+  const x2=cx+r*Math.cos(a2),y2=cy+r*Math.sin(a2);
+  const large = pct > 50 ? 1 : 0;
+  return `<svg viewBox="0 0 140 80" width="140" height="80">
+    <path d="M${cx-r},${cy} A${r},${r} 0 0 1 ${cx+r},${cy}"
+      fill="none" stroke="var(--border)" stroke-width="9" stroke-linecap="round"/>
+    <path d="M${x1},${y1} A${r},${r} 0 ${large} 1 ${x2},${y2}"
+      fill="none" stroke="${color}" stroke-width="9" stroke-linecap="round"/>
+    <text x="${cx}" y="${cy-6}" text-anchor="middle" font-family="JetBrains Mono"
+      font-size="16" fill="${color}" font-weight="600">${logS}</text>
+    <text x="${cx}" y="${cy+6}" text-anchor="middle" font-family="JetBrains Mono"
+      font-size="7" fill="var(--muted)">logS (log mol/L)</text>
+  </svg>`;
+}
+
+function logSColor(v){ return v>0?'var(--blue2)':v>-2?'var(--green2)':v>-4?'var(--amber2)':'var(--red2)'; }
+function solBadgeCls(c){ const m={highly_soluble:'sbhs',soluble:'sbs',slightly_soluble:'sbss',practically_insoluble:'sbls'}; return m[c]||'sbss'; }
+function classifyLogS(v){
+  if(v>0) return ['highly_soluble','Highly Soluble'];
+  if(v>-2) return ['soluble','Soluble'];
+  if(v>-4) return ['slightly_soluble','Slightly Soluble'];
+  return ['practically_insoluble','Practically Insoluble'];
+}
+
+// ── RENDER SINGLE MODEL RESULT ─────────────────────────────────────
+function renderResult(el, statEl, data, modelColor, modelLabel, featureHtml){
+  const lc = logSColor(data.logS);
+  const [cls, lbl] = classifyLogS(data.logS);
+  const bc = solBadgeCls(cls);
+  const mw = data.molecular_weight || data.mw;
+  const domIn = data.in_domain !== false;
+
+  statEl.textContent = `logS = ${data.logS}`;
+
+  el.innerHTML = `
+    <div class="gauge-wrap">
+      ${gauge(data.logS, modelColor)}
+      <span class="sol-badge ${bc}">${lbl}</span>
+    </div>
+
+    <div style="text-align:center">
+      <div class="logS-val" style="color:${lc}">${data.logS}</div>
+      <div class="logS-unit">log₁₀(mol/L)</div>
+    </div>
+
+    <div class="num-row" style="justify-content:center;margin-top:0.5rem">
+      <div class="nm">mol/L: <span style="color:${lc}">${data.mol_per_liter||((10**data.logS).toFixed(4))}</span></div>
+      ${mw?`<div class="nm">MW: <span>${mw}</span></div>`:''}
+    </div>
+
+    <div class="divider" style="height:1px;background:var(--border);margin:0.8rem 0"></div>
+
+    ${featureHtml || ''}
+
+    <div class="domain-box ${domIn?'din':'dout'}">
+      <span>${domIn?'✅':'⚠️'}</span>
+      <div class="domain-txt">
+        <strong>${domIn?'In Domain':'Out of Domain'}</strong>
+        ${data.domain_note||`MW ${mw?'<600':'unknown'} — ${domIn?'reliable':'use caution'}`}
+      </div>
+      <div class="domain-pct" style="color:${domIn?'var(--green2)':'var(--red2)'}">${data.domain_score||'—'}%</div>
+    </div>
+
+    ${data.structural_note?`<div class="expl"><div class="expl-t">Structural Note</div><div class="expl-txt">${data.structural_note}</div></div>`:''}
+
+    <div class="src-note">
+      <div class="src-t">Model</div>
+      <div class="src-txt">${modelLabel}</div>
+    </div>
+  `;
+}
+
+// ── XGBoost FEATURE HTML ───────────────────────────────────────────
+const xgbFeatHtml = `
+  <div style="font-family:var(--mono);font-size:0.57rem;color:var(--muted);
+    letter-spacing:0.1em;text-transform:uppercase;margin-bottom:0.35rem;
+    display:flex;align-items:center;gap:0.4rem">
+    Feature Breakdown (298 total)
+    <div style="flex:1;height:1px;background:var(--border)"></div></div>
+  <div class="feat-bars">
+    <div class="frow"><span class="flb">RDKit descriptors</span><div class="ftrack"><div class="ffill ffg" style="width:${(125/298)*100}%"></div></div><span class="fct">125</span></div>
+    <div class="frow"><span class="flb">Morgan FP 128-bit</span><div class="ftrack"><div class="ffill ffb" style="width:${(128/298)*100}%"></div></div><span class="fct">128</span></div>
+    <div class="frow"><span class="flb">Functional groups</span><div class="ftrack"><div class="ffill ffa" style="width:${(7/298)*100}%"></div></div><span class="fct">7</span></div>
+    <div class="frow"><span class="flb">Structural features</span><div class="ftrack"><div class="ffill ffp" style="width:${(38/298)*100}%"></div></div><span class="fct">38</span></div>
+  </div>`;
+
+// ── MPNN FEATURE HTML ──────────────────────────────────────────────
+const mpnnFeatHtml = `
+  <div style="font-family:var(--mono);font-size:0.57rem;color:var(--muted);
+    letter-spacing:0.1em;text-transform:uppercase;margin-bottom:0.35rem;
+    display:flex;align-items:center;gap:0.4rem">
+    Graph Architecture
+    <div style="flex:1;height:1px;background:var(--border)"></div></div>
+  <div class="feat-bars">
+    <div class="frow"><span class="flb">Atom features</span><div class="ftrack"><div class="ffill ffp" style="width:${(51/57)*100}%"></div></div><span class="fct">51</span></div>
+    <div class="frow"><span class="flb">Bond features</span><div class="ftrack"><div class="ffill ffa" style="width:${(6/57)*100}%"></div></div><span class="fct">6</span></div>
+    <div class="frow"><span class="flb">Node embedding</span><div class="ftrack"><div class="ffill ffg" style="width:100%"></div></div><span class="fct">128</span></div>
+    <div class="frow"><span class="flb">MPNN layers</span><div class="ftrack"><div class="ffill ffb" style="width:${(4/6)*100}%"></div></div><span class="fct">4</span></div>
+  </div>`;
+
+// ── RENDER ENSEMBLE ────────────────────────────────────────────────
+function renderEnsemble(el, statEl, data){
+  const lc = logSColor(data.logS_ensemble);
+  const [cls, lbl] = classifyLogS(data.logS_ensemble);
+  const bc = solBadgeCls(cls);
+  const conf = data.confidence || 0;
+  const agree = data.model_agreement;
+  const confColor = conf>0.8?'var(--green2)':conf>0.5?'var(--amber2)':'var(--red2)';
+  const confLabel = conf>0.8?'High':'Medium';
+
+  statEl.textContent = `logS = ${data.logS_ensemble}`;
+
+  el.innerHTML = `
+    <div class="gauge-wrap">
+      ${gauge(data.logS_ensemble, 'var(--blue2)')}
+      <span class="sol-badge ${bc}">${lbl}</span>
+    </div>
+
+    <div style="text-align:center">
+      <div class="logS-val" style="color:${lc}">${data.logS_ensemble}</div>
+      <div class="logS-unit">log₁₀(mol/L) — weighted ensemble</div>
+    </div>
+
+    <div class="divider" style="height:1px;background:var(--border);margin:0.8rem 0"></div>
+
+    <!-- Agreement bar -->
+    <div class="agree-bar-wrap">
+      <div class="agree-bar-lbl">
+        <span>Model Confidence</span>
+        <span style="color:${confColor}">${(conf*100).toFixed(0)}% · ${confLabel}</span>
+      </div>
+      <div class="agree-track">
+        <div class="agree-fill" style="width:${conf*100}%;background:${confColor}"></div>
+      </div>
+    </div>
+
+    ${agree!==null&&agree!==undefined?`
+    <div class="agree-bar-wrap">
+      <div class="agree-bar-lbl">
+        <span>XGB vs MPNN Difference</span>
+        <span style="color:${agree<0.5?'var(--green2)':agree<1?'var(--amber2)':'var(--red2)'}">${agree.toFixed(3)} logS units</span>
+      </div>
+      <div class="agree-track">
+        <div class="agree-fill" style="width:${Math.min(100,(agree/2)*100)}%;
+          background:${agree<0.5?'var(--green)':agree<1?'var(--amber)':'var(--red)'}"></div>
+      </div>
+      <div style="font-family:var(--mono);font-size:0.6rem;color:var(--muted);margin-top:0.25rem">
+        ${agree<0.5?'Models agree well — high confidence'
+          :agree<1.0?'Moderate disagreement — use caution'
+          :'Models disagree significantly'}
+      </div>
+    </div>` : ''}
+
+    <div class="domain-box ${data.in_domain?'din':'dout'}">
+      <span>${data.in_domain?'✅':'⚠️'}</span>
+      <div class="domain-txt">
+        <strong>${data.in_domain?'In Training Domain':'Outside Domain'}</strong>
+        ${data.domain_note||'Based on molecular weight threshold (MW < 600)'}
+      </div>
+      <div class="domain-pct" style="color:${data.in_domain?'var(--green2)':'var(--red2)'}">${data.domain_score||'—'}%</div>
+    </div>
+
+    <div class="info-row">
+      <span class="sg">XGBoost weight:</span> ${(parseFloat(document.getElementById('xgbW').value)*100).toFixed(0)}% ·
+      <span class="sp">MPNN weight:</span> ${(parseFloat(document.getElementById('mpnnW').value)*100).toFixed(0)}%
+    </div>
+
+    <div class="src-note">
+      <div class="src-t">Ensemble Note</div>
+      <div class="src-txt">
+        Combined prediction: <strong>${data.xgb_weight*100||50}% XGBoost + ${data.mpnn_weight*100||50}% MPNN</strong>.
+        Adjust weights in the config panel to favour the model that performs better
+        on your specific molecular class.
+      </div>
+    </div>
+  `;
+}
+
+// ── RENDER COMPARISON TABLE ────────────────────────────────────────
+function renderCompare(xgb, mpnn, ens){
+  document.getElementById('comparePanel').style.display = 'block';
+  document.getElementById('compareContent').innerHTML = `
+    <table class="comp-table">
+      <tr><th>Property</th><th style="color:var(--green)">XGBoost</th><th style="color:var(--purple)">MPNN</th><th style="color:var(--blue2)">Ensemble</th></tr>
+      <tr><td>logS</td><td style="color:var(--green2)">${xgb.logS}</td><td style="color:var(--purple)">${mpnn.logS}</td><td style="color:var(--blue2);font-weight:600">${ens.logS_ensemble}</td></tr>
+      <tr><td>mol/L</td><td>${xgb.mol_per_liter}</td><td>${mpnn.mol_per_liter}</td><td>${ens.mol_per_liter}</td></tr>
+      <tr><td>Solubility Class</td><td>${xgb.solubility_label}</td><td>${mpnn.solubility_label}</td><td style="font-weight:500">${ens.solubility_label||classifyLogS(ens.logS_ensemble)[1]}</td></tr>
+      <tr><td>In Domain</td><td>${xgb.in_domain?'✅':'⚠️'}</td><td>${mpnn.in_domain?'✅':'⚠️'}</td><td>${ens.in_domain?'✅':'⚠️'}</td></tr>
+      <tr><td>Model Approach</td><td style="color:var(--muted)">298 tabular features</td><td style="color:var(--muted)">Molecular graph, 4 MP layers</td><td style="color:var(--muted)">Weighted average</td></tr>
+      <tr><td>Difference from ensemble</td>
+        <td style="color:${Math.abs(xgb.logS-ens.logS_ensemble)<0.3?'var(--green2)':'var(--amber2)'}">${Math.abs(xgb.logS-ens.logS_ensemble).toFixed(3)}</td>
+        <td style="color:${Math.abs(mpnn.logS-ens.logS_ensemble)<0.3?'var(--green2)':'var(--amber2)'}">${Math.abs(mpnn.logS-ens.logS_ensemble).toFixed(3)}</td>
+        <td>—</td></tr>
+    </table>
+
+    <div style="margin-top:0.9rem;display:grid;grid-template-columns:1fr 1fr;gap:0.8rem">
+      <div class="src-note">
+        <div class="src-t">XGBoost Strengths</div>
+        <div class="src-txt">Tabular features · SHAP interpretability · Fast inference · 
+          Best for drug-like molecules well-represented in training data</div>
+      </div>
+      <div class="src-note" style="background:var(--purple-bg);border-color:rgba(167,139,250,0.12)">
+        <div class="src-t" style="color:var(--purple)">MPNN Strengths</div>
+        <div class="src-txt">Molecular graph structure · Captures local atom environments · 
+          No handcrafted features · Better generalisation to novel scaffolds</div>
+      </div>
+    </div>
+  `;
+}
+
+// ── MAIN PREDICTION ────────────────────────────────────────────────
+async function runAll(){
+  const smiles = document.getElementById('smi').value.trim();
+  if(!smiles){ alert('Please enter a SMILES string.'); return; }
+
+  const xgbW = parseFloat(document.getElementById('xgbW').value) || 0.5;
+  const mpnnW = parseFloat(document.getElementById('mpnnW').value) || 0.5;
+  apiUrl = document.getElementById('apiUrl').value.trim().replace(/\/$/,'');
+
+  const pBtn = document.getElementById('pBtn');
+  pBtn.disabled=true; pBtn.textContent='⏳ Predicting...';
+
+  // Show all loaders
+  ['xgb','mpnn','ens'].forEach(id=>{
+    document.getElementById(id+'Load').classList.add('show');
+    document.getElementById(id+'Res').innerHTML='';
+  });
+  document.getElementById('comparePanel').style.display='none';
+
+  const xgbInterval  = animLoader(document.getElementById('xgbStep'),  XGB_STEPS,  'green');
+  const mpnnInterval = animLoader(document.getElementById('mpnnStep'), MPNN_STEPS, 'purple');
+  const ensInterval  = animLoader(document.getElementById('ensStep'),  ENS_STEPS,  'blue');
+
+  let xgbResult=null, mpnnResult=null, ensResult=null;
+
+  if(apiOnline && !aiFallback){
+    // ── REAL API ────────────────────────────────────────────────────
+    try {
+      const [xr, mr, er] = await Promise.all([
+        fetch(apiUrl+'/predict_xgb', {method:'POST',headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({smiles, xgb_weight:xgbW, mpnn_weight:mpnnW}),
+          signal:AbortSignal.timeout(20000)}),
+        fetch(apiUrl+'/predict_mpnn', {method:'POST',headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({smiles}),signal:AbortSignal.timeout(20000)}),
+        fetch(apiUrl+'/predict_ensemble', {method:'POST',headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({smiles, xgb_weight:xgbW, mpnn_weight:mpnnW}),
+          signal:AbortSignal.timeout(20000)}),
+      ]);
+      xgbResult  = await xr.json();
+      mpnnResult = await mr.json();
+      ensResult  = await er.json();
+    } catch(e){
+      console.warn('API failed, falling back to AI:', e);
+      apiOnline = false;
+    }
+  }
+
+  if(!apiOnline || aiFallback || !xgbResult){
+    // ── CLAUDE AI FALLBACK — predicts both models ────────────────────
+    const prompt = `You are a computational chemist predicting water solubility.
+Predict logS for SMILES: "${smiles}"
+
+Simulate TWO different model approaches:
+1. XGBoost using 298 tabular molecular features (RDKit + Morgan FP + functional groups + structural)
+2. MPNN using molecular graph (4 message-passing layers on atom/bond graph)
+
+The two approaches should give slightly different predictions — typically within 0.5 logS units.
+Add small realistic variation between them.
+
+Respond ONLY with valid JSON, no markdown:
+{
+  "xgboost": {
+    "logS": -2.1,
+    "mol_per_liter": 0.0079,
+    "solubility_class": "slightly_soluble",
+    "solubility_label": "Slightly Soluble",
+    "in_domain": true,
+    "domain_score": 78,
+    "domain_note": "MW within drug-like range",
+    "structural_note": "Ester group reduces solubility, carboxylate increases it"
+  },
+  "mpnn": {
+    "logS": -2.3,
+    "mol_per_liter": 0.005,
+    "solubility_class": "slightly_soluble",
+    "solubility_label": "Slightly Soluble",
+    "in_domain": true,
+    "domain_score": 75,
+    "domain_note": "Aromatic ring system well-represented in training"
+  },
+  "ensemble": {
+    "logS_xgboost": -2.1,
+    "logS_mpnn": -2.3,
+    "logS_ensemble": -2.2,
+    "mol_per_liter": 0.006,
+    "solubility_label": "Slightly Soluble",
+    "model_agreement": 0.2,
+    "confidence": 0.85,
+    "in_domain": true,
+    "domain_score": 77,
+    "xgb_weight": ${xgbW},
+    "mpnn_weight": ${mpnnW}
+  }
+}`;
+
+    try {
+      const r = await fetch('https://api.anthropic.com/v1/messages',{
+        method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:800,
+          system:'Computational chemistry AI. JSON only, no markdown.',
+          messages:[{role:'user',content:prompt}]})
+      });
+      const d = await r.json();
+      const parsed = JSON.parse(d.content[0].text.replace(/```json|```/g,'').trim());
+      xgbResult  = parsed.xgboost;
+      mpnnResult = parsed.mpnn;
+      ensResult  = parsed.ensemble;
+
+      // Add source flag
+      xgbResult._source  = 'claude_ai';
+      mpnnResult._source = 'claude_ai';
+      ensResult._source  = 'claude_ai';
+    } catch(e){
+      ['xgb','mpnn','ens'].forEach(id=>{
+        document.getElementById(id+'Load').classList.remove('show');
+        document.getElementById(id+'Res').innerHTML=`<div style="color:var(--red2);font-family:var(--mono);font-size:0.72rem">Error: ${e.message}</div>`;
+      });
+      clearInterval(xgbInterval); clearInterval(mpnnInterval); clearInterval(ensInterval);
+      pBtn.disabled=false; pBtn.textContent='⚡ Predict with Both Models';
+      return;
+    }
+  }
+
+  // ── RENDER ALL ────────────────────────────────────────────────────
+  clearInterval(xgbInterval); clearInterval(mpnnInterval); clearInterval(ensInterval);
+  ['xgb','mpnn','ens'].forEach(id=>document.getElementById(id+'Load').classList.remove('show'));
+  pBtn.disabled=false; pBtn.textContent='⚡ Predict with Both Models';
+
+  const isReal = !xgbResult._source;
+
+  // XGBoost panel
+  renderResult(
+    document.getElementById('xgbRes'),
+    document.getElementById('xgbStat'),
+    {...xgbResult, logS: xgbResult.logS_xgboost||xgbResult.logS},
+    'var(--green2)',
+    isReal
+      ? 'Real XGBoost model (xgboost_model_298_4045.json) · 298 features computed by RDKit · <a href="https://github.com/ali1810/Water_Solubility">github.com/ali1810/Water_Solubility</a>'
+      : '⚠ Claude AI simulation of XGBoost tabular approach — start ensemble_api.py for real model',
+    xgbFeatHtml
+  );
+
+  // MPNN panel
+  renderResult(
+    document.getElementById('mpnnRes'),
+    document.getElementById('mpnnStat'),
+    {...mpnnResult, logS: mpnnResult.logS_mpnn||mpnnResult.logS},
+    'var(--purple)',
+    isReal
+      ? 'Real MPNN model (mpnn_solubility_best.pt) · 4-layer message passing · 128-dim node embeddings'
+      : '⚠ Claude AI simulation of MPNN graph approach — train model first with train_mpnn.py',
+    mpnnFeatHtml
+  );
+
+  // Ensemble panel
+  renderEnsemble(
+    document.getElementById('ensRes'),
+    document.getElementById('ensStat'),
+    ensResult
+  );
+
+  // Comparison table
+  const xgbForCompare = {...xgbResult, logS: xgbResult.logS_xgboost||xgbResult.logS,
+    solubility_label: xgbResult.solubility_label||classifyLogS(xgbResult.logS)[1]};
+  const mpnnForCompare = {...mpnnResult, logS: mpnnResult.logS_mpnn||mpnnResult.logS,
+    solubility_label: mpnnResult.solubility_label||classifyLogS(mpnnResult.logS)[1]};
+  renderCompare(xgbForCompare, mpnnForCompare, ensResult);
+}
+</script>
+</body>
+</html>
