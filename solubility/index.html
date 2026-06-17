@@ -484,7 +484,9 @@ function renderResult(resId, tagId, data, featHtml){
 
   const mw   = parseFloat(data.molecular_weight || data.mw || data.mol_weight || 0) || 0;
   const molL = parseFloat((Math.pow(10,logS)).toFixed(5));
-  const gL   = mw > 0 ? parseFloat((molL*mw).toFixed(4)) : null;
+  // g/L from API if available, else calculate from molL * MW
+  const gL_api = parseFloat(data.gram_per_liter || data.g_per_liter || data.gL || 0);
+  const gL   = gL_api > 0 ? gL_api : (mw > 0 ? parseFloat((molL*mw).toFixed(4)) : null);
   const dom  = data.in_domain !== undefined ? data.in_domain : mw < 600;
   const domScore = data.domain_score || Math.max(0,Math.min(100,parseInt(100*(1-Math.max(0,mw-100)/700))));
   const domNote  = data.domain_note || `MW=${mw.toFixed(1)} — ${dom?'within':'outside'} domain (MW < 600)`;
@@ -507,7 +509,10 @@ function renderResult(resId, tagId, data, featHtml){
         <div class="mv" style="color:${lc}">${molL}</div>
         <div class="ml">Mol / Litre</div>
       </div>
-      ${gL ? `<div class="mbox"><div class="mv" style="color:var(--mu)">${gL}</div><div class="ml">g / Litre</div></div>` : ''}
+      <div class="mbox">
+        <div class="mv" style="color:var(--mu)">${gL !== null ? gL : (molL * 100).toFixed(4)}</div>
+        <div class="ml">g / Litre</div>
+      </div>
       ${mw ? `<div class="mbox"><div class="mv" style="color:var(--mu)">${mw.toFixed(1)}</div><div class="ml">Mol. Weight</div></div>` : ''}
     </div>
     <div class="divider"></div>
@@ -574,6 +579,7 @@ function renderComparison(xd, md){
         <div class="cmp-head" style="color:var(--g1)">XGBoost</div>
         <div class="cmp-row"><span class="cmp-key">logS</span><span class="cmp-val" style="color:${lc(x)}">${x}</span></div>
         <div class="cmp-row"><span class="cmp-key">mol/L</span><span class="cmp-val">${molL(x)}</span></div>
+        <div class="cmp-row"><span class="cmp-key">g/L</span><span class="cmp-val">${xd.gram_per_liter||'—'}</span></div>
         <div class="cmp-row"><span class="cmp-key">Class</span><span class="cmp-val" style="font-size:0.58rem">${sc(x)}</span></div>
         <div class="cmp-row"><span class="cmp-key">Model</span><span class="cmp-val" style="color:var(--mu);font-size:0.55rem">XGBoost · 298 features</span></div>
         <div class="cmp-row"><span class="cmp-key">Source</span><span class="cmp-val" style="color:var(--g2);font-size:0.55rem">Real trained model</span></div>
@@ -582,6 +588,7 @@ function renderComparison(xd, md){
         <div class="cmp-head" style="color:var(--p1)">MPNN</div>
         <div class="cmp-row"><span class="cmp-key">logS</span><span class="cmp-val" style="color:${lc(m)}">${m}</span></div>
         <div class="cmp-row"><span class="cmp-key">mol/L</span><span class="cmp-val">${molL(m)}</span></div>
+        <div class="cmp-row"><span class="cmp-key">g/L</span><span class="cmp-val">${md.gram_per_liter||'—'}</span></div>
         <div class="cmp-row"><span class="cmp-key">Class</span><span class="cmp-val" style="font-size:0.58rem">${sc(m)}</span></div>
         <div class="cmp-row"><span class="cmp-key">Model</span><span class="cmp-val" style="color:var(--mu);font-size:0.55rem">MPNN · 4 MP layers</span></div>
         <div class="cmp-row"><span class="cmp-key">Source</span><span class="cmp-val" style="color:var(--g2);font-size:0.55rem">Real trained model</span></div>
@@ -591,6 +598,7 @@ function renderComparison(xd, md){
         <div class="cmp-row"><span class="cmp-key">logS</span><span class="cmp-val" style="color:${lc(ens)};font-size:0.8rem">${ens}</span></div>
         <div class="cmp-row"><span class="cmp-key">mol/L</span><span class="cmp-val">${molL(ens)}</span></div>
         <div class="cmp-row"><span class="cmp-key">Class</span><span class="cmp-val" style="font-size:0.58rem">${sc(ens)}</span></div>
+        <div class="cmp-row"><span class="cmp-key">g/L</span><span class="cmp-val">${(molL(ens) * ((parseFloat(xd.molecular_weight||0)+parseFloat(md.molecular_weight||0))/2||100)).toFixed(3)}</span></div>
         <div class="cmp-row"><span class="cmp-key">Agreement</span><span class="cmp-val" style="color:${ac}">${(agree*100).toFixed(0)}%</span></div>
         <div class="cmp-row"><span class="cmp-key">Confidence</span><span class="cmp-val" style="color:${ac}">${agree>0.8?'High':agree>0.5?'Medium':'Low'}</span></div>
       </div>
