@@ -445,18 +445,44 @@ function solClass(v){
 }
 
 // ── RENDER MODEL RESULT ───────────────────────────────────────────────────
+function extractLogS(data){
+  // Try every possible field name the API might use
+  const candidates = [
+    data.logS, data.logS_rounded, data.log_s, data.LogS,
+    data.prediction, data.result, data.value, data.output
+  ];
+  for(const v of candidates){
+    const n = parseFloat(v);
+    if(!isNaN(n)) return n;
+  }
+  return NaN;
+}
+
 function renderResult(resId, tagId, data, featHtml){
-  // Safety: ensure logS is a valid number
-  const logS = parseFloat(data.logS);
+  // Show raw API response in console for debugging
+  console.log('API response for', resId, ':', JSON.stringify(data));
+
+  const logS = extractLogS(data);
+
   if(isNaN(logS)){
+    // Show the actual API response so we can debug
     document.getElementById(resId).innerHTML =
-      `<div style="color:var(--r2);font-family:var(--mono);font-size:0.72rem;padding:1rem">
-        Invalid prediction received. Please try again.
+      `<div style="background:var(--rbg);border:1px solid rgba(239,68,68,0.2);
+        border-radius:0.4rem;padding:0.85rem;font-family:var(--mono);font-size:0.65rem;
+        color:var(--r2);line-height:1.7">
+        <strong>Could not read logS from API response</strong><br><br>
+        API returned: <br>
+        <code style="color:var(--a2);font-size:0.62rem;word-break:break-all">
+          ${JSON.stringify(data)}
+        </code><br><br>
+        Open browser console (F12) for full details.
+        Check <a href="https://ali1810-chempredict.hf.space/docs" target="_blank"
+          style="color:var(--b2)">API docs</a> for field names.
       </div>`;
     return;
   }
 
-  const mw   = parseFloat(data.molecular_weight || data.mw || 0) || 0;
+  const mw   = parseFloat(data.molecular_weight || data.mw || data.mol_weight || 0) || 0;
   const molL = parseFloat((Math.pow(10,logS)).toFixed(5));
   const gL   = mw > 0 ? parseFloat((molL*mw).toFixed(4)) : null;
   const dom  = data.in_domain !== undefined ? data.in_domain : mw < 600;
@@ -635,11 +661,14 @@ async function runAll(){
     const xgbData  = await xr.json();
     const mpnnData = await mr.json();
 
-    // Validate we got real numbers
-    if(xgbData.logS === undefined || xgbData.logS === null)
-      throw new Error('XGBoost returned no logS value');
-    if(mpnnData.logS === undefined || mpnnData.logS === null)
-      throw new Error('MPNN returned no logS value');
+    // Normalise field names — extractLogS tries all variants
+    xgbData.logS  = extractLogS(xgbData);
+    mpnnData.logS = extractLogS(mpnnData);
+
+    if(isNaN(xgbData.logS))
+      throw new Error('XGBoost: no logS in response. Got: '+JSON.stringify(xgbData));
+    if(isNaN(mpnnData.logS))
+      throw new Error('MPNN: no logS in response. Got: '+JSON.stringify(mpnnData));
 
     clearInterval(xgbInt); clearInterval(mpnnInt);
     document.getElementById('xgbLoad').classList.remove('on');
