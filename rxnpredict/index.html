@@ -6,147 +6,92 @@
 <title>RxnPredict — Retrosynthesis AI · Dr. Mushtaq Ali · KIT</title>
 <style>
   :root {
-    --bg: #0a1628; --surface: #111e35; --card: #162240;
-    --border: #1e3a5f; --accent: #00d4aa; --accent2: #4fc3f7;
-    --text: #e8f4f8; --muted: #7a9bb5; --danger: #ff6b6b;
-    --warn: #ffd166; --success: #06d6a0;
+    --bg:#0a1628; --surface:#111e35; --card:#162240;
+    --border:#1e3a5f; --accent:#00d4aa; --accent2:#4fc3f7;
+    --text:#e8f4f8; --muted:#7a9bb5; --danger:#ff6b6b;
+    --warn:#ffd166; --success:#06d6a0;
   }
-  * { margin:0; padding:0; box-sizing:border-box; }
-  body { background:var(--bg); color:var(--text); font-family:'Inter',sans-serif; min-height:100vh; }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;min-height:100vh;}
 
-  /* Header */
-  header {
-    background: linear-gradient(135deg, #0a1628, #0d3b5e, #0a1628);
-    padding: 24px 40px; border-bottom: 1px solid var(--border);
-    display: flex; align-items: center; justify-content: space-between;
-  }
-  .logo { display:flex; align-items:center; gap:14px; }
-  .logo-icon { font-size:2.2rem; }
-  .logo h1 { font-size:1.5rem; font-weight:800; }
-  .logo p  { font-size:0.78rem; color:var(--muted); margin-top:2px; }
-  .badges { display:flex; gap:8px; flex-wrap:wrap; }
-  .badge {
-    padding:4px 12px; border-radius:20px; font-size:0.75rem; font-weight:700;
-    border:1px solid; white-space:nowrap;
-  }
-  .badge-green  { background:rgba(0,212,170,0.1); border-color:var(--accent);  color:var(--accent); }
-  .badge-blue   { background:rgba(79,195,247,0.1); border-color:var(--accent2); color:var(--accent2); }
-  .badge-yellow { background:rgba(255,209,102,0.1); border-color:var(--warn);   color:var(--warn); }
+  header{background:linear-gradient(135deg,#0a1628,#0d3b5e,#0a1628);padding:24px 40px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;}
+  .logo{display:flex;align-items:center;gap:14px;}
+  .logo-icon{font-size:2.2rem;}
+  .logo h1{font-size:1.5rem;font-weight:800;}
+  .logo p{font-size:0.78rem;color:var(--muted);margin-top:2px;}
+  .badges{display:flex;gap:8px;flex-wrap:wrap;}
+  .badge{padding:4px 12px;border-radius:20px;font-size:0.75rem;font-weight:700;border:1px solid;white-space:nowrap;}
+  .badge-green{background:rgba(0,212,170,0.1);border-color:var(--accent);color:var(--accent);}
+  .badge-blue{background:rgba(79,195,247,0.1);border-color:var(--accent2);color:var(--accent2);}
+  .badge-yellow{background:rgba(255,209,102,0.1);border-color:var(--warn);color:var(--warn);}
+  .badge-red{background:rgba(255,107,107,0.1);border-color:var(--danger);color:var(--danger);}
 
-  /* Stats bar */
-  .stats-bar {
-    background:var(--surface); border-bottom:1px solid var(--border);
-    display:flex; justify-content:center; gap:48px; padding:14px 40px;
-  }
-  .stat { text-align:center; }
-  .stat-val { font-size:1.4rem; font-weight:800; color:var(--accent); }
-  .stat-lbl { font-size:0.72rem; color:var(--muted); margin-top:2px; }
+  .stats-bar{background:var(--surface);border-bottom:1px solid var(--border);display:flex;justify-content:center;gap:48px;padding:14px 40px;flex-wrap:wrap;}
+  .stat{text-align:center;}
+  .stat-val{font-size:1.4rem;font-weight:800;color:var(--accent);}
+  .stat-lbl{font-size:0.72rem;color:var(--muted);margin-top:2px;}
 
-  /* Main layout */
-  main { max-width:1100px; margin:0 auto; padding:32px 24px; display:grid; grid-template-columns:1fr 1fr; gap:24px; }
-  @media(max-width:768px){ main { grid-template-columns:1fr; } }
+  main{max-width:1100px;margin:0 auto;padding:32px 24px;display:grid;grid-template-columns:1fr 1fr;gap:24px;}
+  @media(max-width:768px){main{grid-template-columns:1fr;}}
 
-  /* Cards */
-  .card {
-    background:var(--card); border:1px solid var(--border);
-    border-radius:16px; padding:24px;
-  }
-  .card-title { font-size:0.85rem; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:0.06em; margin-bottom:16px; }
+  .card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:24px;}
+  .card-title{font-size:0.85rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:16px;}
 
-  /* Input */
-  label { display:block; font-size:0.82rem; color:var(--muted); margin-bottom:6px; margin-top:14px; }
-  input[type=text], select {
-    width:100%; padding:10px 14px; border-radius:8px;
-    background:#0d1f38; border:1px solid var(--border);
-    color:var(--text); font-size:0.9rem; font-family:monospace;
-    outline:none; transition:border-color 0.2s;
-  }
-  input[type=text]:focus, select:focus { border-color:var(--accent); }
-  select { font-family:'Inter',sans-serif; }
+  label{display:block;font-size:0.82rem;color:var(--muted);margin-bottom:6px;margin-top:14px;}
+  input[type=text],select{width:100%;padding:10px 14px;border-radius:8px;background:#0d1f38;border:1px solid var(--border);color:var(--text);font-size:0.9rem;font-family:monospace;outline:none;transition:border-color 0.2s;}
+  input[type=text]:focus,select:focus{border-color:var(--accent);}
+  select{font-family:'Inter',sans-serif;}
 
-  /* Buttons */
-  .btn-primary {
-    width:100%; margin-top:18px; padding:13px;
-    background:linear-gradient(135deg, var(--accent), #00b894);
-    border:none; border-radius:10px; color:#0a1628;
-    font-size:1rem; font-weight:800; cursor:pointer;
-    transition:opacity 0.2s, transform 0.1s;
-  }
-  .btn-primary:hover:not(:disabled) { opacity:0.9; transform:translateY(-1px); }
-  .btn-primary:disabled { opacity:0.5; cursor:not-allowed; }
+  .btn-primary{width:100%;margin-top:18px;padding:13px;background:linear-gradient(135deg,var(--accent),#00b894);border:none;border-radius:10px;color:#0a1628;font-size:1rem;font-weight:800;cursor:pointer;transition:opacity 0.2s,transform 0.1s;}
+  .btn-primary:hover:not(:disabled){opacity:0.9;transform:translateY(-1px);}
+  .btn-primary:disabled{opacity:0.5;cursor:not-allowed;}
 
-  .examples { display:flex; gap:6px; flex-wrap:wrap; margin-top:10px; }
-  .ex-btn {
-    padding:4px 10px; background:transparent; border:1px solid var(--border);
-    border-radius:6px; color:var(--muted); font-size:0.75rem; cursor:pointer;
-    transition:all 0.15s;
-  }
-  .ex-btn:hover { border-color:var(--accent); color:var(--accent); }
+  .examples{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px;}
+  .ex-btn{padding:4px 10px;background:transparent;border:1px solid var(--border);border-radius:6px;color:var(--muted);font-size:0.75rem;cursor:pointer;transition:all 0.15s;}
+  .ex-btn:hover{border-color:var(--accent);color:var(--accent);}
 
-  /* Status */
-  .status-bar {
-    margin-top:14px; padding:10px 14px; border-radius:8px;
-    font-size:0.82rem; display:none; align-items:center; gap:8px;
-  }
-  .status-bar.loading { background:rgba(79,195,247,0.1); border:1px solid var(--accent2); color:var(--accent2); display:flex; }
-  .status-bar.error   { background:rgba(255,107,107,0.1); border:1px solid var(--danger);  color:var(--danger);  display:flex; }
-  .spinner { width:14px; height:14px; border:2px solid rgba(79,195,247,0.3); border-top-color:var(--accent2); border-radius:50%; animation:spin 0.8s linear infinite; }
-  @keyframes spin { to { transform:rotate(360deg); } }
+  .status-bar{margin-top:14px;padding:10px 14px;border-radius:8px;font-size:0.82rem;display:none;align-items:center;gap:8px;}
+  .status-bar.loading{background:rgba(79,195,247,0.1);border:1px solid var(--accent2);color:var(--accent2);display:flex;}
+  .status-bar.error{background:rgba(255,107,107,0.1);border:1px solid var(--danger);color:var(--danger);display:flex;}
+  .spinner{width:14px;height:14px;border:2px solid rgba(79,195,247,0.3);border-top-color:var(--accent2);border-radius:50%;animation:spin 0.8s linear infinite;flex-shrink:0;}
+  @keyframes spin{to{transform:rotate(360deg);}}
 
-  /* Results */
-  .results-area { grid-column: 1 / -1; }
+  .results-area{grid-column:1 / -1;}
+  .top-pred{background:linear-gradient(135deg,rgba(0,212,170,0.08),rgba(79,195,247,0.08));border:1px solid var(--accent);border-radius:12px;padding:20px;margin-bottom:20px;display:none;}
+  .top-pred-label{font-size:0.75rem;color:var(--accent);font-weight:700;text-transform:uppercase;letter-spacing:0.06em;}
+  .top-pred-smiles{font-family:monospace;font-size:1.1rem;font-weight:700;margin-top:8px;word-break:break-all;}
+  .top-pred-meta{font-size:0.78rem;color:var(--muted);margin-top:6px;}
 
-  .top-pred {
-    background:linear-gradient(135deg, rgba(0,212,170,0.08), rgba(79,195,247,0.08));
-    border:1px solid var(--accent); border-radius:12px; padding:20px;
-    margin-bottom:20px; display:none;
-  }
-  .top-pred-label { font-size:0.75rem; color:var(--accent); font-weight:700; text-transform:uppercase; letter-spacing:0.06em; }
-  .top-pred-smiles { font-family:monospace; font-size:1.1rem; font-weight:700; margin-top:8px; word-break:break-all; }
-  .top-pred-meta { font-size:0.78rem; color:var(--muted); margin-top:6px; }
+  .pred-list{display:flex;flex-direction:column;gap:10px;}
+  .pred-item{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px;}
+  .pred-item.valid{border-left:3px solid var(--success);}
+  .pred-item.invalid{border-left:3px solid var(--muted);opacity:0.7;}
+  .pred-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;gap:8px;}
+  .pred-rank{background:var(--accent);color:#0a1628;border-radius:50%;width:24px;height:24px;display:flex;align-items:center;justify-content:center;font-size:0.78rem;font-weight:800;flex-shrink:0;}
+  .pred-smiles{font-family:monospace;font-size:0.88rem;word-break:break-all;flex:1;margin:0 8px;}
+  .pred-conf{font-size:0.78rem;color:var(--muted);white-space:nowrap;}
+  .conf-bar{height:4px;background:var(--border);border-radius:2px;margin-top:8px;}
+  .conf-fill{height:100%;border-radius:2px;background:linear-gradient(90deg,var(--accent),var(--accent2));transition:width 0.5s;}
+  .validity-tag{font-size:0.72rem;padding:2px 8px;border-radius:10px;font-weight:600;}
+  .valid-tag{background:rgba(6,214,160,0.15);color:var(--success);}
+  .invalid-tag{background:rgba(122,155,181,0.15);color:var(--muted);}
 
-  .pred-list { display:flex; flex-direction:column; gap:10px; }
-  .pred-item {
-    background:var(--surface); border:1px solid var(--border);
-    border-radius:10px; padding:16px; transition:border-color 0.2s;
-  }
-  .pred-item.valid   { border-left:3px solid var(--success); }
-  .pred-item.invalid { border-left:3px solid var(--muted); opacity:0.7; }
-  .pred-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:8px; }
-  .pred-rank { background:var(--accent); color:#0a1628; border-radius:50%; width:24px; height:24px; display:flex; align-items:center; justify-content:center; font-size:0.78rem; font-weight:800; flex-shrink:0; }
-  .pred-smiles { font-family:monospace; font-size:0.88rem; word-break:break-all; flex:1; margin:0 12px; }
-  .pred-conf { font-size:0.78rem; color:var(--muted); white-space:nowrap; }
-  .conf-bar { height:4px; background:var(--border); border-radius:2px; margin-top:8px; }
-  .conf-fill { height:100%; border-radius:2px; background:linear-gradient(90deg, var(--accent), var(--accent2)); transition:width 0.5s; }
-  .validity-tag { font-size:0.72rem; padding:2px 8px; border-radius:10px; font-weight:600; }
-  .valid-tag   { background:rgba(6,214,160,0.15); color:var(--success); }
-  .invalid-tag { background:rgba(122,155,181,0.15); color:var(--muted); }
+  .history-item{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border);font-size:0.82rem;}
+  .history-item:last-child{border-bottom:none;}
+  .history-smiles{font-family:monospace;color:var(--accent2);max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .history-meta{color:var(--muted);font-size:0.75rem;}
+  .clear-btn{background:none;border:none;color:var(--muted);cursor:pointer;font-size:0.75rem;}
+  .clear-btn:hover{color:var(--danger);}
 
-  /* History */
-  .history-item { display:flex; justify-content:space-between; align-items:center; padding:8px 0; border-bottom:1px solid var(--border); font-size:0.82rem; }
-  .history-item:last-child { border-bottom:none; }
-  .history-smiles { font-family:monospace; color:var(--accent2); max-width:180px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-  .history-meta { color:var(--muted); font-size:0.75rem; }
-  .clear-btn { background:none; border:none; color:var(--muted); cursor:pointer; font-size:0.75rem; }
-  .clear-btn:hover { color:var(--danger); }
+  .model-table{width:100%;border-collapse:collapse;font-size:0.82rem;}
+  .model-table td{padding:6px 0;border-bottom:1px solid rgba(30,58,95,0.5);}
+  .model-table td:first-child{color:var(--muted);width:45%;}
+  .model-table td:last-child{color:var(--text);font-weight:600;}
 
-  /* Model info */
-  .model-table { width:100%; border-collapse:collapse; font-size:0.82rem; }
-  .model-table th { text-align:left; color:var(--muted); padding:6px 0; font-weight:600; border-bottom:1px solid var(--border); }
-  .model-table td { padding:6px 0; border-bottom:1px solid rgba(30,58,95,0.5); }
-  .model-table td:first-child { color:var(--muted); width:45%; }
-  .model-table td:last-child { color:var(--text); font-weight:600; }
+  .api-url{font-size:0.72rem;font-family:monospace;color:var(--accent2);background:rgba(79,195,247,0.08);padding:8px 12px;border-radius:6px;margin-top:10px;word-break:break-all;}
 
-  /* API status */
-  .api-status { display:inline-flex; align-items:center; gap:6px; font-size:0.78rem; }
-  .dot { width:8px; height:8px; border-radius:50%; }
-  .dot-green  { background:var(--success); box-shadow:0 0 6px var(--success); }
-  .dot-red    { background:var(--danger); }
-  .dot-yellow { background:var(--warn); animation:pulse 1.5s infinite; }
-  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
-
-  footer { text-align:center; padding:24px; color:var(--muted); font-size:0.78rem; border-top:1px solid var(--border); margin-top:16px; }
-  footer a { color:var(--accent2); text-decoration:none; }
+  footer{text-align:center;padding:24px;color:var(--muted);font-size:0.78rem;border-top:1px solid var(--border);margin-top:16px;}
+  footer a{color:var(--accent2);text-decoration:none;}
 </style>
 </head>
 <body>
@@ -163,7 +108,7 @@
     <span class="badge badge-green">Top-1: 61.3%</span>
     <span class="badge badge-blue">Top-5: 74.2%</span>
     <span class="badge badge-yellow">16× SMILES Aug</span>
-    <span class="badge badge-green" id="api-badge">🔴 API Offline</span>
+    <span class="badge" id="api-badge" style="background:rgba(255,209,102,0.1);border-color:var(--warn);color:var(--warn)">⏳ Connecting...</span>
   </div>
 </header>
 
@@ -177,13 +122,11 @@
 
 <main>
 
-  <!-- Input card -->
+  <!-- Input -->
   <div class="card">
     <div class="card-title">🔬 Reaction Input</div>
-
     <label>Product SMILES (required)</label>
     <input type="text" id="smiles-input" placeholder="e.g. CC(=O)Oc1ccccc1C(=O)O"/>
-
     <label>Reaction Class (USPTO taxonomy)</label>
     <select id="class-select">
       <option value="0">0 — Unknown / Auto-detect</option>
@@ -198,25 +141,22 @@
       <option value="9">9 — FGI</option>
       <option value="10">10 — FGA</option>
     </select>
-
-    <div style="margin-top:10px; font-size:0.78rem; color:var(--muted);">Quick examples:</div>
-    <div class="examples" id="examples-container">
+    <div style="margin-top:10px;font-size:0.78rem;color:var(--muted)">Quick examples:</div>
+    <div class="examples">
       <button class="ex-btn" onclick="loadExample('CC(=O)Oc1ccccc1C(=O)O',2)">Aspirin (cls 2)</button>
       <button class="ex-btn" onclick="loadExample('CC(=O)Nc1ccc(O)cc1',2)">Paracetamol (cls 2)</button>
       <button class="ex-btn" onclick="loadExample('CC(C)Cc1ccc(cc1)C(C)C(=O)O',2)">Ibuprofen (cls 2)</button>
       <button class="ex-btn" onclick="loadExample('Cn1cnc2c1c(=O)n(c(=O)n2C)C',4)">Caffeine (cls 4)</button>
       <button class="ex-btn" onclick="loadExample('CCO',9)">Ethanol (cls 9)</button>
     </div>
-
     <button class="btn-primary" id="predict-btn" onclick="runPrediction()">⚡ Predict Reactants</button>
-
     <div class="status-bar" id="status-bar">
       <div class="spinner"></div>
       <span id="status-text">Running prediction...</span>
     </div>
   </div>
 
-  <!-- History card -->
+  <!-- Info -->
   <div class="card">
     <div class="card-title" style="display:flex;justify-content:space-between">
       📋 Prediction History
@@ -232,9 +172,10 @@
       <tr><td>Dataset</td><td>USPTO-50K</td></tr>
       <tr><td>Augmentation</td><td>16× SMILES</td></tr>
       <tr><td>Vocab size</td><td>59 tokens</td></tr>
-      <tr><td>HF Repo</td><td>ali1810/retrosynthesis-opennmt</td></tr>
-      <tr><td>API Status</td><td><span id="api-status-cell">Checking...</span></td></tr>
+      <tr><td>HF Model</td><td>ali1810/retrosynthesis-opennmt</td></tr>
+      <tr><td>API Status</td><td><span id="api-status-cell">⏳ Connecting...</span></td></tr>
     </table>
+    <div class="api-url" id="api-url-display"></div>
   </div>
 
   <!-- Results -->
@@ -246,7 +187,7 @@
     </div>
     <div class="pred-list" id="pred-list">
       <div style="text-align:center;padding:40px;color:var(--muted)">
-        ⚗️<br><br>Enter a product SMILES and click<br>"Predict Reactants"<br>to get top-k reactant candidates
+        ⚗️<br><br>Enter a product SMILES and click "Predict Reactants"
       </div>
     </div>
   </div>
@@ -254,129 +195,144 @@
 </main>
 
 <footer>
-  RxnPredict · Dr. Mushtaq Ali · <a href="https://github.com/ali1810/chempredict">github.com/ali1810/chempredict</a> · KIT ·
+  RxnPredict · Dr. Mushtaq Ali ·
+  <a href="https://github.com/ali1810/chempredict">github.com/ali1810/chempredict</a> · KIT ·
   <a href="https://pubs.acs.org/doi/10.1021/acs.jcim.4c02399">ACS JCIM 2025</a><br>
-  Powered by <a href="https://huggingface.co/ali1810/retrosynthesis-opennmt">ali1810/retrosynthesis-opennmt</a> ·
-  Architecture: <a href="https://github.com/kheyer/Retrosynthesis-Prediction">kheyer/Retrosynthesis-Prediction</a>
+  Backend: <a href="https://huggingface.co/spaces/ali1810/rxnpredict-api" id="hf-space-link">ali1810/rxnpredict-api on HF Spaces</a> ·
+  Model: <a href="https://huggingface.co/ali1810/retrosynthesis-opennmt">ali1810/retrosynthesis-opennmt</a>
 </footer>
 
 <script>
-// ── Config ──────────────────────────────────────────────────────────────────
-const API_BASE = "http://127.0.0.1:8000";  // change to your deployed URL
+// ── API URL — HuggingFace Spaces ─────────────────────────────────────────────
+// After deploying your Space, update this URL to your actual Space URL
+const API_BASE = "https://ali1810-rxnpredict-api.hf.space";
+
+document.getElementById("api-url-display").textContent = "API: " + API_BASE;
+
 let predCount = 0;
 let history = [];
 
-// ── API health check ────────────────────────────────────────────────────────
+// ── Health check ─────────────────────────────────────────────────────────────
 async function checkHealth() {
   try {
-    const r = await fetch(`${API_BASE}/health`, {signal: AbortSignal.timeout(3000)});
+    const r = await fetch(`${API_BASE}/health`, {
+      signal: AbortSignal.timeout(8000)
+    });
     const d = await r.json();
-    const loaded = d.model_loaded;
-    document.getElementById("api-badge").textContent = loaded ? "🟢 Model Ready" : "🟡 Loading...";
-    document.getElementById("api-badge").className = loaded ? "badge badge-green" : "badge badge-yellow";
-    document.getElementById("api-status-cell").innerHTML =
-      loaded ? '<span style="color:var(--success)">✅ Model Loaded</span>'
-             : '<span style="color:var(--warn)">⏳ Loading model...</span>';
-  } catch {
-    document.getElementById("api-badge").textContent = "🔴 API Offline";
-    document.getElementById("api-badge").className = "badge badge-yellow";
-    document.getElementById("api-status-cell").innerHTML =
-      '<span style="color:var(--danger)">❌ Start uvicorn</span>';
+
+    if (d.model_loaded) {
+      setApiStatus("ready");
+    } else if (d.error) {
+      setApiStatus("error", d.error);
+    } else {
+      setApiStatus("loading");
+      setTimeout(checkHealth, 5000); // retry while loading
+    }
+  } catch(e) {
+    setApiStatus("offline");
+    setTimeout(checkHealth, 10000); // retry every 10s
   }
 }
 
-// ── Load example ────────────────────────────────────────────────────────────
+function setApiStatus(state, msg="") {
+  const badge = document.getElementById("api-badge");
+  const cell  = document.getElementById("api-status-cell");
+  const states = {
+    ready:   { badge: "🟢 Model Ready",    cls: "badge-green",  cell: '<span style="color:var(--success)">✅ Ready</span>' },
+    loading: { badge: "⏳ Loading Model",  cls: "badge-yellow", cell: '<span style="color:var(--warn)">⏳ Loading...</span>' },
+    offline: { badge: "🔴 API Starting",   cls: "badge-red",    cell: '<span style="color:var(--danger)">🔴 Starting up...</span>' },
+    error:   { badge: "❌ Error",           cls: "badge-red",    cell: `<span style="color:var(--danger)">❌ ${msg.slice(0,40)}</span>` },
+  };
+  const s = states[state] || states.offline;
+  badge.textContent = s.badge;
+  badge.className = `badge ${s.cls}`;
+  cell.innerHTML = s.cell;
+}
+
+// ── Load example ──────────────────────────────────────────────────────────────
 function loadExample(smiles, cls) {
   document.getElementById("smiles-input").value = smiles;
   document.getElementById("class-select").value = String(cls);
 }
 
-// ── Run prediction ──────────────────────────────────────────────────────────
+// ── Predict ───────────────────────────────────────────────────────────────────
 async function runPrediction() {
   const smiles = document.getElementById("smiles-input").value.trim();
   const cls    = parseInt(document.getElementById("class-select").value);
-
   if (!smiles) { showStatus("error", "Please enter a SMILES string"); return; }
 
-  showStatus("loading", "Running beam search inference...");
+  showStatus("loading", "Sending to HuggingFace Spaces API...");
   document.getElementById("predict-btn").disabled = true;
   document.getElementById("pred-list").innerHTML =
-    '<div style="text-align:center;padding:30px;color:var(--muted)">⏳ Running OpenNMT inference...</div>';
+    '<div style="text-align:center;padding:30px;color:var(--muted)">⏳ Running OpenNMT beam search...</div>';
   document.getElementById("top-pred").style.display = "none";
 
   try {
     const resp = await fetch(`${API_BASE}/predict`, {
       method: "POST",
       headers: {"Content-Type": "application/json"},
-      body: JSON.stringify({smiles, reaction_class: cls, n_best: 5, beam_size: 5}),
+      body: JSON.stringify({smiles, reaction_class: cls, n_best:5, beam_size:5}),
     });
-
     if (!resp.ok) {
-      const err = await resp.json();
+      const err = await resp.json().catch(()=>({}));
       throw new Error(err.detail || `HTTP ${resp.status}`);
     }
-
     const data = await resp.json();
     hideStatus();
     renderResults(data);
     addHistory(smiles, data);
     predCount++;
     document.getElementById("pred-count").textContent = predCount;
-
-  } catch (e) {
+  } catch(e) {
     showStatus("error", `❌ ${e.message}`);
     document.getElementById("pred-list").innerHTML =
-      '<div style="text-align:center;padding:30px;color:var(--danger)">Prediction failed — is the FastAPI backend running?</div>';
+      `<div style="text-align:center;padding:30px;color:var(--danger)">
+        Prediction failed: ${e.message}<br><br>
+        The HF Space may be waking up — try again in 30 seconds.
+      </div>`;
   } finally {
     document.getElementById("predict-btn").disabled = false;
   }
 }
 
-// ── Render results ──────────────────────────────────────────────────────────
+// ── Render results ────────────────────────────────────────────────────────────
 function renderResults(data) {
-  // Top prediction
   const top = document.getElementById("top-pred");
   document.getElementById("top-pred-smiles").textContent = data.top_prediction || "—";
   document.getElementById("top-pred-meta").textContent =
     `Product: ${data.product} · ${data.predictions.length} candidates · ${data.processing_time_ms}ms`;
   top.style.display = "block";
 
-  // Prediction list
   const list = document.getElementById("pred-list");
   if (!data.predictions.length) {
     list.innerHTML = '<div style="color:var(--muted);text-align:center;padding:20px">No predictions returned</div>';
     return;
   }
-
   list.innerHTML = data.predictions.map(p => `
-    <div class="pred-item ${p.is_valid ? 'valid' : 'invalid'}">
+    <div class="pred-item ${p.is_valid?'valid':'invalid'}">
       <div class="pred-header">
         <div class="pred-rank">${p.rank}</div>
         <div class="pred-smiles">${p.reactants}</div>
         <div style="display:flex;align-items:center;gap:8px">
-          <span class="validity-tag ${p.is_valid ? 'valid-tag' : 'invalid-tag'}">
-            ${p.is_valid ? '✅ Valid' : '⚠️ Invalid'}
+          <span class="validity-tag ${p.is_valid?'valid-tag':'invalid-tag'}">
+            ${p.is_valid?'✅ Valid':'⚠️ Invalid'}
           </span>
-          <div class="pred-conf">${(p.confidence * 100).toFixed(1)}%</div>
+          <div class="pred-conf">${(p.confidence*100).toFixed(1)}%</div>
         </div>
       </div>
       <div class="conf-bar">
-        <div class="conf-fill" style="width:${(p.confidence * 100).toFixed(1)}%"></div>
+        <div class="conf-fill" style="width:${(p.confidence*100).toFixed(1)}%"></div>
       </div>
-      <div style="font-size:0.72rem;color:var(--muted);margin-top:6px">
-        log-prob score: ${p.score}
-      </div>
-    </div>
-  `).join("");
+      <div style="font-size:0.72rem;color:var(--muted);margin-top:6px">log-prob: ${p.score}</div>
+    </div>`).join("");
 }
 
-// ── History ─────────────────────────────────────────────────────────────────
+// ── History ───────────────────────────────────────────────────────────────────
 function addHistory(smiles, data) {
   history.unshift({smiles, top: data.top_prediction, time: new Date().toLocaleTimeString()});
-  if (history.length > 10) history.pop();
+  if (history.length > 8) history.pop();
   renderHistory();
 }
-
 function renderHistory() {
   const el = document.getElementById("history-list");
   if (!history.length) { el.innerHTML = '<div style="color:var(--muted);font-size:0.82rem">No predictions yet</div>'; return; }
@@ -384,30 +340,24 @@ function renderHistory() {
     <div class="history-item">
       <div>
         <div class="history-smiles" title="${h.smiles}">${h.smiles}</div>
-        <div class="history-meta">→ ${h.top || '—'}</div>
+        <div class="history-meta">→ ${h.top||'—'}</div>
       </div>
       <div class="history-meta">${h.time}</div>
-    </div>
-  `).join("");
+    </div>`).join("");
 }
+function clearHistory() { history=[]; renderHistory(); }
 
-function clearHistory() { history = []; renderHistory(); }
-
-// ── Status helpers ───────────────────────────────────────────────────────────
+// ── Status helpers ────────────────────────────────────────────────────────────
 function showStatus(type, msg) {
   const bar = document.getElementById("status-bar");
   bar.className = `status-bar ${type}`;
   document.getElementById("status-text").textContent = msg;
 }
-function hideStatus() {
-  document.getElementById("status-bar").className = "status-bar";
-}
+function hideStatus() { document.getElementById("status-bar").className = "status-bar"; }
 
-// ── Init ─────────────────────────────────────────────────────────────────────
+// ── Init ──────────────────────────────────────────────────────────────────────
 checkHealth();
-setInterval(checkHealth, 10000);   // check every 10 seconds
-
-// Enter key to predict
+setInterval(checkHealth, 15000);
 document.getElementById("smiles-input").addEventListener("keydown", e => {
   if (e.key === "Enter") runPrediction();
 });
