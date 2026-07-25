@@ -217,22 +217,58 @@ footer{position:relative;z-index:1;border-top:1px solid var(--bd);
     <div class="panel">
       <div class="ph"><div class="ph-l"><div class="dot dg"></div>Molecule Input</div></div>
       <div class="pb">
-        <label class="lbl">SMILES String</label>
-        <input class="inp" id="smi" placeholder="e.g. CCO (ethanol)" value="CCO">
 
-        <label class="lbl">Examples</label>
-        <div class="exwrap">
-          <button class="exbtn" onclick="s('CCO')">Ethanol</button>
-          <button class="exbtn" onclick="s('c1ccccc1')">Benzene</button>
-          <button class="exbtn" onclick="s('CC(=O)OC1=CC=CC=C1C(=O)O')">Aspirin</button>
-          <button class="exbtn" onclick="s('Cn1cnc2c1c(=O)n(C)c(=O)n2C')">Caffeine</button>
-          <button class="exbtn" onclick="s('CC(C)Cc1ccc(cc1)C(C)C(=O)O')">Ibuprofen</button>
-          <button class="exbtn" onclick="s('OC[C@H]1OC(O)[C@H](O)[C@@H](O)[C@@H]1O')">Glucose</button>
-          <button class="exbtn" onclick="s('c1ccc2ccccc2c1')">Naphthalene</button>
-          <button class="exbtn" onclick="s('CC(=O)Nc1ccc(O)cc1')">Paracetamol</button>
+        <!-- Input type toggle -->
+        <div style="display:flex;gap:0;margin-bottom:0.7rem;border:1px solid var(--bd);border-radius:0.3rem;overflow:hidden">
+          <button id="tab-smiles" onclick="switchInputTab('smiles')"
+            style="flex:1;padding:0.35rem;font-family:var(--mono);font-size:0.62rem;
+            background:var(--g1);color:#000;border:none;cursor:pointer;font-weight:600">
+            SMILES
+          </button>
+          <button id="tab-inchi" onclick="switchInputTab('inchi')"
+            style="flex:1;padding:0.35rem;font-family:var(--mono);font-size:0.62rem;
+            background:var(--s0);color:var(--mu);border:none;cursor:pointer">
+            InChI
+          </button>
         </div>
 
-        <button class="pbtn" id="pBtn" onclick="runAll()">⚡ Predict Solubility</button>
+        <!-- SMILES input -->
+        <div id="input-smiles">
+          <label class="lbl">SMILES String</label>
+          <input class="inp" id="smi" placeholder="e.g. CCO (ethanol)" value="CCO">
+          <label class="lbl">Examples</label>
+          <div class="exwrap">
+            <button class="exbtn" onclick="s('CCO')">Ethanol</button>
+            <button class="exbtn" onclick="s('c1ccccc1')">Benzene</button>
+            <button class="exbtn" onclick="s('CC(=O)OC1=CC=CC=C1C(=O)O')">Aspirin</button>
+            <button class="exbtn" onclick="s('Cn1cnc2c1c(=O)n(C)c(=O)n2C')">Caffeine</button>
+            <button class="exbtn" onclick="s('CC(C)Cc1ccc(cc1)C(C)C(=O)O')">Ibuprofen</button>
+            <button class="exbtn" onclick="s('OC[C@H]1OC(O)[C@H](O)[C@@H](O)[C@@H]1O')">Glucose</button>
+            <button class="exbtn" onclick="s('c1ccc2ccccc2c1')">Naphthalene</button>
+            <button class="exbtn" onclick="s('CC(=O)Nc1ccc(O)cc1')">Paracetamol</button>
+          </div>
+        </div>
+
+        <!-- InChI input -->
+        <div id="input-inchi" style="display:none">
+          <label class="lbl">InChI String</label>
+          <input class="inp" id="inchi-val"
+            placeholder="e.g. InChI=1S/C2H6O/c1-2-3/h3H,2H2,1H3">
+          <label class="lbl">Examples</label>
+          <div class="exwrap">
+            <button class="exbtn" onclick="si('InChI=1S/C2H6O/c1-2-3/h3H,2H2,1H3')">Ethanol</button>
+            <button class="exbtn" onclick="si('InChI=1S/C9H8O4/c1-6(10)13-8-5-3-2-4-7(8)9(11)12/h2-5H,1H3,(H,11,12)')">Aspirin</button>
+            <button class="exbtn" onclick="si('InChI=1S/C8H10N4O2/c1-10-4-9-6-5(10)7(13)12(3)8(14)11(6)2/h4H,1-3H3')">Caffeine</button>
+            <button class="exbtn" onclick="si('InChI=1S/C13H18O2/c1-9(2)8-10-3-5-11(6-4-10)12(3)13(14)15/h3-6,9,12H,7-8H2,1-2H3,(H,14,15)')">Ibuprofen</button>
+            <button class="exbtn" onclick="si('InChI=1S/C6H12O6/c7-1-2-3(8)4(9)5(10)6(11)12-2/h2-11H,1H2/t2-,3-,4+,5-,6?/m1/s1')">Glucose</button>
+            <button class="exbtn" onclick="si('InChI=1S/C9H7N7O2S/c1-13-5-7-6(10-3-13)8(16)14(4-11-7)9(17)12-2-15/h3-5H,2H2,1H3,(H,12,17)')">Naphthalene alt</button>
+          </div>
+          <div style="font-size:0.6rem;color:var(--mu);margin-top:0.4rem">
+            InChI is resolved to SMILES via PubChem before prediction
+          </div>
+        </div>
+
+        <button class="pbtn" id="pBtn" onclick="runAll()">&#x26A1; Predict Solubility</button>
 
         <!-- API URL config -->
         <div style="margin-top:0.8rem">
@@ -248,6 +284,71 @@ footer{position:relative;z-index:1;border-top:1px solid var(--bd);
       </div>
     </div>
   </div>
+
+  <!-- Add this JavaScript before </body> or in existing <script> block -->
+  <script>
+  // ── InChI tab switching ───────────────────────────────────────────────────
+  function switchInputTab(tab) {
+    const isSmiles = tab === 'smiles';
+    document.getElementById('input-smiles').style.display = isSmiles ? 'block' : 'none';
+    document.getElementById('input-inchi').style.display  = isSmiles ? 'none'  : 'block';
+    document.getElementById('tab-smiles').style.background = isSmiles ? 'var(--g1)' : 'var(--s0)';
+    document.getElementById('tab-smiles').style.color      = isSmiles ? '#000'      : 'var(--mu)';
+    document.getElementById('tab-inchi').style.background  = isSmiles ? 'var(--s0)' : 'var(--g1)';
+    document.getElementById('tab-inchi').style.color       = isSmiles ? 'var(--mu)' : '#000';
+  }
+
+  // Set InChI example
+  function si(val) {
+    document.getElementById('inchi-val').value = val;
+  }
+
+  // Override runAll to resolve InChI first if needed
+  const _origRunAll = typeof runAll === 'function' ? runAll : null;
+
+  async function resolveInChItoSMILES(inchi) {
+    const r = await fetch('https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/inchi/property/CanonicalSMILES/JSON', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: 'inchi=' + encodeURIComponent(inchi)
+    });
+    if (!r.ok) throw new Error('InChI not found in PubChem');
+    const data = await r.json();
+    return data.PropertyTable.Properties[0].CanonicalSMILES;
+  }
+
+  // Wrap runAll to handle InChI input
+  const originalRunAll = window.runAll;
+  window.runAll = async function() {
+    const isInchi = document.getElementById('input-inchi').style.display !== 'none';
+    if (isInchi) {
+      const inchi = document.getElementById('inchi-val').value.trim();
+      if (!inchi) { alert('Please enter an InChI string'); return; }
+      const btn = document.getElementById('pBtn');
+      btn.disabled = true;
+      btn.textContent = 'Resolving InChI...';
+      try {
+        const smiles = await resolveInChItoSMILES(inchi);
+        document.getElementById('smi').value = smiles;
+        btn.textContent = 'Running models...';
+        // Switch back to SMILES tab so the model reads from #smi
+        document.getElementById('input-smiles').style.display = 'block';
+        document.getElementById('input-inchi').style.display  = 'none';
+        if (originalRunAll) await originalRunAll();
+        // Switch back to InChI tab after prediction
+        switchInputTab('inchi');
+        document.getElementById('inchi-val').value = inchi;
+      } catch(e) {
+        alert('Could not resolve InChI: ' + e.message);
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = '&#x26A1; Predict Solubility';
+      }
+    } else {
+      if (originalRunAll) originalRunAll();
+    }
+  };
+  </script>
 
   <!-- XGBoost RESULT -->
   <div>
