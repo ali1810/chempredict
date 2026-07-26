@@ -755,7 +755,7 @@ async function runAll(){
         body: JSON.stringify({smiles}),
         signal: AbortSignal.timeout(30000)  // 30s timeout for cold start
       }),
-      fetch(API+'/predict_mpnn', {
+      fetch(API+'/predict/mpnn', {
         method:'POST',
         headers:{'Content-Type':'application/json'},
         body: JSON.stringify({smiles}),
